@@ -1,0 +1,777 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}用户管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-users me-2"></i>用户管理
+                    </h4>
+                    <div>
+                        <button class="btn btn-primary" onclick="showAddModal()">
+                            <i class="fas fa-plus me-1"></i>添加用户
+                        </button>
+                        <button class="btn btn-info" onclick="refreshData()">
+                            <i class="fas fa-sync me-1"></i>刷新
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 筛选条件 -->
+                <div class="card-body">
+                    <form id="searchForm" class="row g-3 mb-4" method="post" action="/user-management/">
+                        {% csrf_token %}
+                        <div class="col-md-3">
+                            <label class="form-label">平台筛选</label>
+                            <select name="platform" id="platformSelect" class="form-select">
+                                <option value="">全部平台</option>
+                                {% for platform in platforms %}
+                                <option value="{{ platform }}" {% if current_filters.platform == platform %}selected{% endif %}>
+                                    {{ platform }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">项目筛选</label>
+                            <select name="project" id="projectSelect" class="form-select">
+                                <option value="">全部项目</option>
+                                {% for project in projects %}
+                                <option value="{{ project.title }}" {% if current_filters.project == project.title %}selected{% endif %}>
+                                    {{ project.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">关键词搜索</label>
+                            <input type="text" name="search" class="form-control" placeholder="搜索用户名、邮箱或姓名" 
+                                   value="{{ current_filters.search }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary d-block w-100">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- 数据表格 -->
+                    <div id="user-management-content">
+                        {% include 'spiders/user_management_content.html' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加用户模态框 -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">用户名 <span class="text-danger">*</span></label>
+                                <input type="text" name="username" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">邮箱 <span class="text-danger">*</span></label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">密码 <span class="text-danger">*</span></label>
+                                <input type="password" name="password" id="addPassword" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">确认密码 <span class="text-danger">*</span></label>
+                                <input type="password" name="confirm_password" id="addConfirmPassword" class="form-control" required>
+                                <div class="invalid-feedback" id="passwordMismatchError" style="display: none;">
+                                    两次输入的密码不一致
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">姓</label>
+                                <input type="text" name="first_name" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">名</label>
+                                <input type="text" name="last_name" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_staff" id="addIsStaff">
+                                <label class="form-check-label" for="addIsStaff">
+                                    管理员权限
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="addIsActive" checked>
+                                <label class="form-check-label" for="addIsActive">
+                                    激活账户
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 查看用户模态框 -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">用户详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewModalBody">
+                <!-- 内容将通过JavaScript动态加载 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑用户模态框 -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="user_id" id="editUserId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">用户名 <span class="text-danger">*</span></label>
+                                <input type="text" name="username" id="editUsername" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">邮箱 <span class="text-danger">*</span></label>
+                                <input type="email" name="email" id="editEmail" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">新密码（留空则不修改）</label>
+                                <input type="password" name="password" id="editPassword" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">确认新密码</label>
+                                <input type="password" name="confirm_password" id="editConfirmPassword" class="form-control">
+                                <div class="invalid-feedback" id="editPasswordMismatchError" style="display: none;">
+                                    两次输入的密码不一致
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">姓</label>
+                                <input type="text" name="first_name" id="editFirstName" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">名</label>
+                                <input type="text" name="last_name" id="editLastName" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_staff" id="editIsStaff">
+                                <label class="form-check-label" for="editIsStaff">
+                                    管理员权限
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="editIsActive">
+                                <label class="form-check-label" for="editIsActive">
+                                    激活账户
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 页面版本号 - 用于调试和确认加载了最新代码
+console.log('========================================');
+console.log('🚀 用户管理页面已加载');
+console.log('📦 版本: 2025-10-09-v4-JQUERY-FIXED');
+console.log('⏰ 时间:', new Date().toISOString());
+console.log('✅ jQuery加载顺序已修复');
+console.log('✅ 使用form.serialize()方法');
+console.log('✅ 成功后刷新整个页面');
+console.log('========================================');
+
+$(document).ready(function() {
+    // 密码确认验证函数
+    function validatePasswordMatch(passwordField, confirmField, errorElement) {
+        var password = passwordField.val();
+        var confirmPassword = confirmField.val();
+        
+        console.log('密码验证函数:', password, confirmPassword);
+        console.log('错误元素:', errorElement.length);
+        
+        // 如果两个密码框都有值且不匹配，显示错误
+        if (password && confirmPassword && password !== confirmPassword) {
+            confirmField.addClass('is-invalid');
+            errorElement.show();
+            console.log('密码不匹配 - 显示错误');
+            return false;
+        } 
+        // 如果两个密码框都有值且匹配，清除错误
+        else if (password && confirmPassword && password === confirmPassword) {
+            confirmField.removeClass('is-invalid');
+            errorElement.hide();
+            console.log('密码匹配 - 隐藏错误');
+            return true;
+        }
+        // 如果密码框为空，清除错误状态
+        else {
+            confirmField.removeClass('is-invalid');
+            errorElement.hide();
+            console.log('密码框为空 - 隐藏错误');
+            return true;
+        }
+    }
+    
+    // 添加用户表单密码确认验证 - 使用事件委托
+    $(document).on('input keyup blur', '#addPassword, #addConfirmPassword', function() {
+        console.log('密码输入事件触发，当前元素:', this.id);
+        console.log('密码值:', $('#addPassword').val());
+        console.log('确认密码值:', $('#addConfirmPassword').val());
+        validatePasswordMatch($('#addPassword'), $('#addConfirmPassword'), $('#passwordMismatchError'));
+    });
+    
+    // 编辑用户表单密码确认验证
+    $('#editPassword, #editConfirmPassword').on('input', function() {
+        validatePasswordMatch($('#editPassword'), $('#editConfirmPassword'), $('#editPasswordMismatchError'));
+    });
+    
+    // 平台选择变化时加载项目
+    $('#platformSelect').on('change', function() {
+        var platform = $(this).val();
+        var projectSelect = $('#projectSelect');
+        
+        if (platform) {
+            // 启用项目选择框
+            projectSelect.prop('disabled', false);
+            projectSelect.html('<option value="">正在加载项目...</option>');
+            
+            // 获取该平台下的项目
+            $.ajax({
+                url: '/get-platform-projects/',
+                type: 'GET',
+                data: { 'platform': platform },
+                headers: {
+                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                xhrFields: {
+                    withCredentials: true
+                },
+                success: function(response) {
+                    if (response.success) {
+                        projectSelect.html('<option value="">全部项目</option>');
+                        $.each(response.projects, function(index, project) {
+                            projectSelect.append('<option value="' + project.title + '">' + 
+                                project.title + '</option>');
+                        });
+                    } else {
+                        projectSelect.html('<option value="">加载失败</option>');
+                    }
+                },
+                error: function() {
+                    projectSelect.html('<option value="">加载失败</option>');
+                }
+            });
+        } else {
+            // 禁用项目选择框
+            projectSelect.prop('disabled', true);
+            projectSelect.html('<option value="">全部项目</option>');
+        }
+    });
+    
+    // 搜索表单提交
+    $('#searchForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // 使用AJAX提交搜索，避免URL参数暴露
+        $.ajax({
+            url: '/user-management/',
+            type: 'POST',
+            data: $(this).serialize(),
+            dataType: 'html',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                // 更新页面内容
+                var newContent = $(response).find('#user-management-content').html();
+                $('#user-management-content').html(newContent);
+            },
+            error: function() {
+                alert('搜索失败，请重试');
+            }
+        });
+    });
+    
+    // 添加用户表单提交 - 使用事件委托
+    $(document).on('submit', '#addForm', function(e) {
+        e.preventDefault();
+        
+        console.log('========================================');
+        console.log('📝 开始提交添加用户表单');
+        console.log('========================================');
+        
+        var $form = $(this);
+        
+        // 验证密码
+        var password = $('#addPassword').val();
+        var confirmPassword = $('#addConfirmPassword').val();
+        
+        console.log('1. 验证密码...');
+        
+        if (!password) {
+            console.log('   ✗ 密码为空');
+            alert('请输入密码');
+            return false;
+        }
+        
+        if (password !== confirmPassword) {
+            console.log('   ✗ 两次密码不一致');
+            alert('两次输入的密码不一致');
+            return false;
+        }
+        
+        console.log('   ✓ 密码验证通过');
+        
+        // 获取CSRF token
+        var csrfToken = $form.find('[name=csrfmiddlewaretoken]').val();
+        console.log('2. CSRF Token:', csrfToken ? csrfToken.substring(0, 20) + '...' : '未找到');
+        
+        // 序列化表单数据
+        var formData = $form.serialize();
+        console.log('3. 表单数据已序列化');
+        console.log('   长度:', formData.length, '字符');
+        
+        // 发送AJAX请求
+        console.log('4. 发送AJAX请求到 /add-user/');
+        
+        $.ajax({
+            url: '/add-user/',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            beforeSend: function(xhr) {
+                console.log('   → 正在发送请求...');
+                // 禁用提交按钮防止重复提交
+                $form.find('button[type=submit]').prop('disabled', true);
+            },
+            success: function(response) {
+                console.log('   ← 收到响应');
+                console.log('========================================');
+                console.log('✓ 请求成功');
+                console.log('响应:', response);
+                console.log('========================================');
+                
+                if (response.success) {
+                    console.log('✓✓✓ 用户添加成功！');
+                    console.log('    用户ID:', response.user_id);
+                    
+                    // 关闭模态框
+                    $('#addModal').modal('hide');
+                    
+                    // 清空表单
+                    $form[0].reset();
+                    $('#addPassword, #addConfirmPassword').removeClass('is-invalid');
+                    $('#passwordMismatchError').hide();
+                    
+                    // 显示成功消息
+                    alert('✓ 添加成功！\n用户ID: ' + response.user_id);
+                    
+                    // 刷新页面显示新用户
+                    console.log('🔄 重新加载页面以显示新用户...');
+                    window.location.reload();
+                } else {
+                    console.log('✗ 添加失败:', response.message);
+                    alert('添加失败：' + response.message);
+                    $form.find('button[type=submit]').prop('disabled', false);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log('========================================');
+                console.log('✗ 请求失败');
+                console.log('状态码:', xhr.status);
+                console.log('状态文本:', xhr.statusText);
+                console.log('错误:', error);
+                console.log('响应:', xhr.responseText ? xhr.responseText.substring(0, 200) : '(空)');
+                console.log('========================================');
+                
+                var errorMsg = '请求失败';
+                
+                if (xhr.status === 0) {
+                    errorMsg = '无法连接到服务器，请检查网络';
+                } else if (xhr.status === 401) {
+                    errorMsg = '未登录或登录已过期，请重新登录';
+                } else if (xhr.status === 403) {
+                    errorMsg = 'CSRF验证失败或没有权限';
+                } else if (xhr.status === 404) {
+                    errorMsg = '请求地址不存在';
+                } else if (xhr.status === 500) {
+                    errorMsg = '服务器内部错误';
+                } else {
+                    try {
+                        var errResp = JSON.parse(xhr.responseText);
+                        if (errResp.message) {
+                            errorMsg = errResp.message;
+                        }
+                    } catch(e) {
+                        // 忽略JSON解析错误
+                    }
+                }
+                
+                alert('❌ ' + errorMsg);
+                $form.find('button[type=submit]').prop('disabled', false);
+            },
+            complete: function() {
+                console.log('请求完成');
+            }
+        });
+        
+        return false;
+    });
+    
+    // 编辑用户表单提交
+    $('#editForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // 验证密码确认
+        var password = $('#editPassword').val();
+        var confirmPassword = $('#editConfirmPassword').val();
+        
+        if (password && !validatePasswordMatch($('#editPassword'), $('#editConfirmPassword'), $('#editPasswordMismatchError'))) {
+            return;
+        }
+        
+        var userId = $('#editUserId').val();
+        
+        // 获取表单数据
+        var formData = {
+            username: $('#editUsername').val(),
+            email: $('#editEmail').val(),
+            first_name: $('#editFirstName').val(),
+            last_name: $('#editLastName').val(),
+            is_staff: $('#editIsStaff').is(':checked'),
+            is_active: $('#editIsActive').is(':checked'),
+            csrfmiddlewaretoken: $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val()
+        };
+        
+        // 如果提供了新密码，则添加到表单数据中
+        if (password) {
+            formData.password = password;
+        }
+        
+        $.ajax({
+            url: '/edit-user/' + userId + '/',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            headers: {
+                'X-CSRFToken': $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // 关闭模态框
+                    var editModal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                    if (editModal) {
+                        editModal.hide();
+                    }
+                    
+                    // 确保移除模态框背景遮罩
+                    setTimeout(function() {
+                        $('.modal-backdrop').remove();
+                        $('body').removeClass('modal-open');
+                        $('body').css('overflow', '');
+                        $('body').css('padding-right', '');
+                    }, 300);
+                    
+                    // 清空密码字段和错误提示
+                    $('#editPassword, #editConfirmPassword').val('').removeClass('is-invalid');
+                    $('#editPasswordMismatchError').hide();
+                    
+                    // 显示成功消息
+                    alert('编辑成功！');
+                    
+                    // 刷新用户列表而不是整个页面
+                    refreshUserList();
+                } else {
+                    alert('编辑失败：' + response.message);
+                }
+            },
+            error: function() {
+                alert('请求失败，请重试');
+            }
+        });
+    });
+});
+
+// 显示添加模态框
+function showAddModal() {
+    console.log('显示添加用户模态框');
+    
+    // 清空表单和错误提示
+    $('#addForm')[0].reset();
+    $('#addPassword, #addConfirmPassword').removeClass('is-invalid');
+    $('#passwordMismatchError').hide();
+    
+    // 确保事件绑定
+    console.log('检查元素存在性:');
+    console.log('addForm:', $('#addForm').length);
+    console.log('addPassword:', $('#addPassword').length);
+    console.log('addConfirmPassword:', $('#addConfirmPassword').length);
+    console.log('passwordMismatchError:', $('#passwordMismatchError').length);
+    
+    const modal = new bootstrap.Modal(document.getElementById('addModal'));
+    modal.show();
+    
+    // 模态框显示后再次检查
+    setTimeout(function() {
+        console.log('模态框显示后检查:');
+        console.log('addForm:', $('#addForm').length);
+        console.log('addPassword:', $('#addPassword').length);
+        console.log('addConfirmPassword:', $('#addConfirmPassword').length);
+        
+        // 测试密码验证
+        console.log('测试密码验证功能...');
+        $('#addPassword').val('123456');
+        $('#addConfirmPassword').val('654321');
+        $('#addConfirmPassword').trigger('input');
+    }, 500);
+}
+
+// 查看用户详情
+function viewUser(userId) {
+    $.get('/get-user-detail/' + userId + '/', function(response) {
+        if (response.success) {
+            var user = response.user;
+            var html = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>ID:</strong> ${user.id}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>状态:</strong> 
+                        <span class="badge ${user.is_active ? 'bg-success' : 'bg-secondary'}">
+                            ${user.is_active ? '活跃' : '禁用'}
+                        </span>
+                    </div>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <strong>用户名:</strong><br>
+                    ${user.username}
+                </div>
+                <div class="mb-3">
+                    <strong>邮箱:</strong><br>
+                    ${user.email}
+                </div>
+                <div class="mb-3">
+                    <strong>姓名:</strong><br>
+                    ${user.first_name} ${user.last_name}
+                </div>
+                <div class="mb-3">
+                    <strong>管理员权限:</strong><br>
+                    <span class="badge ${user.is_staff ? 'bg-warning' : 'bg-info'}">
+                        ${user.is_staff ? '是' : '否'}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>注册时间:</strong><br>
+                    ${user.date_joined}
+                </div>
+                <div class="mb-3">
+                    <strong>最后登录:</strong><br>
+                    ${user.last_login || '从未登录'}
+                </div>
+            `;
+            $('#viewModalBody').html(html);
+            const modal = new bootstrap.Modal(document.getElementById('viewModal'));
+            modal.show();
+        } else {
+            alert('获取详情失败：' + response.message);
+        }
+    });
+}
+
+// 编辑用户
+function editUser(userId) {
+    $.get('/get-user-detail/' + userId + '/', function(response) {
+        if (response.success) {
+            var user = response.user;
+            $('#editUserId').val(user.id);
+            $('#editUsername').val(user.username);
+            $('#editEmail').val(user.email);
+            $('#editFirstName').val(user.first_name);
+            $('#editLastName').val(user.last_name);
+            $('#editIsStaff').prop('checked', user.is_staff);
+            $('#editIsActive').prop('checked', user.is_active);
+            
+            // 清空密码字段和错误提示
+            $('#editPassword, #editConfirmPassword').val('').removeClass('is-invalid');
+            $('#editPasswordMismatchError').hide();
+            
+            const modal = new bootstrap.Modal(document.getElementById('editModal'));
+            modal.show();
+        } else {
+            alert('获取详情失败：' + response.message);
+        }
+    });
+}
+
+// 管理权限
+function managePermissions(userId) {
+    window.location.href = '/user-project-permissions/' + userId + '/';
+}
+
+// 删除用户
+function deleteUser(userId) {
+    if (confirm('确定要删除该用户吗？此操作不可恢复！')) {
+        $.ajax({
+            url: '/delete-user/' + userId + '/',
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val()
+            },
+            dataType: 'json',
+            headers: {
+                'X-CSRFToken': $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    // 显示成功消息
+                    alert('删除成功！');
+                    
+                    // 刷新用户列表而不是整个页面
+                    refreshUserList();
+                } else {
+                    alert('删除失败：' + response.message);
+                }
+            },
+            error: function() {
+                alert('请求失败，请重试');
+            }
+        });
+    }
+}
+
+// 刷新用户列表
+function refreshUserList() {
+    // 获取当前搜索表单的数据，如果没有则使用空数据
+    var formData = {};
+    if ($('#searchForm').length > 0) {
+        formData = $('#searchForm').serialize();
+    } else {
+        // 如果没有搜索表单，只发送CSRF token
+        formData = {
+            csrfmiddlewaretoken: $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val()
+        };
+    }
+    
+    $.ajax({
+        url: '/user-management/',
+        type: 'POST',
+        data: formData,
+        dataType: 'html',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            console.log('刷新用户列表响应成功');
+            // 直接更新页面内容，因为AJAX返回的就是user_management_content.html的内容
+            $('#user-management-content').html(response);
+            console.log('用户列表已更新');
+        },
+        error: function(xhr, status, error) {
+            console.log('刷新用户列表失败:', status, error);
+            // 不要刷新整个页面，而是显示错误消息
+            alert('刷新用户列表失败，请手动刷新页面');
+        }
+    });
+}
+
+// 刷新数据
+function refreshData() {
+    location.reload();
+}
+</script>
+{% endblock %}

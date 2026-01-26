@@ -1,0 +1,593 @@
+{% extends 'base.html' %}
+
+{% block title %}仪表板 - 数据管理系统{% endblock %}
+
+{% block page_title %}仪表板{% endblock %}
+
+{% block content %}
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-xl-2 col-md-4 mb-4">
+        <div class="card stat-card h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">总评论数</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_comments|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-4">
+        <div class="card stat-card success h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">分析数据</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_sentiment|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-pie fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-4">
+        <div class="card stat-card warning h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">总点赞数</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_likes|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-thumbs-up fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-4">
+        <div class="card stat-card info h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">总回复数</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ total_replies|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-reply fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-4">
+        <div class="card stat-card h-100 py-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">活跃用户</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ active_users|default:0 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-2 col-md-4 mb-4">
+        <div class="card stat-card h-100 py-2" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-uppercase mb-1">平台数量</div>
+                        <div class="h5 mb-0 font-weight-bold">{{ platform_stats|length }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-globe fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 今日数据统计 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    今日数据统计
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-primary">{{ today_sentiment|default:0 }}</h3>
+                        <p class="text-muted mb-0">今日新增分析数据</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-success">{{ today_comments|default:0 }}</h3>
+                        <p class="text-muted mb-0">今日新增评论</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-warning">{{ month_sentiment|default:0 }}</h3>
+                        <p class="text-muted mb-0">本月新增分析数据</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-info">{{ year_sentiment|default:0 }}</h3>
+                        <p class="text-muted mb-0">本年新增分析数据</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 数据增长趋势图表 -->
+<div class="row mb-4">
+    <!-- 月度增长趋势 -->
+    <div class="col-xl-8 col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    数据增长趋势（最近12个月）
+                </h5>
+            </div>
+            <div class="card-body" style="height: 400px;">
+                <canvas id="monthlyGrowthChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 平台分布饼图 -->
+    <div class="col-xl-4 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    平台数据分布
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="platformChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 每日增长趋势 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    每日数据增长（最近30天）
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="dailyGrowthChart" width="400" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 平台详细统计表 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    平台详细统计
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>平台</th>
+                                <th>分析数据量</th>
+                                <th>评论数据量</th>
+                                <th>项目数量</th>
+                                <th>平均点赞数</th>
+                                <th>平均回复数</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in platform_stats %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">{{ stat.platform }}</span>
+                                </td>
+                                <td>{{ stat.sentiment_count }}</td>
+                                <td>{{ stat.comment_count }}</td>
+                                <td>{{ stat.project_count }}</td>
+                                <td>{{ stat.avg_likes|floatformat:1 }}</td>
+                                <td>{{ stat.avg_replies|floatformat:1 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 平台统计 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    平台数据统计
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for platform in platform_stats %}
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">{{ platform.source_c }}</h5>
+                                <h3 class="text-primary">{{ platform.count }}</h3>
+                                <p class="card-text text-muted">评论数量</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+console.log('========================================');
+console.log('仪表板脚本开始加载');
+console.log('Chart.js 版本:', typeof Chart !== 'undefined' ? Chart.version : '未加载');
+console.log('========================================');
+
+// 月度增长趋势图 - 按平台分色
+let monthlyChart;
+
+// 加载平台月度趋势数据
+function loadPlatformMonthlyTrends() {
+    console.log('========================================');
+    console.log('📊 开始加载平台月度趋势数据');
+    console.log('========================================');
+    
+    // 检查canvas元素
+    const canvas = document.getElementById('monthlyGrowthChart');
+    console.log('1. Canvas元素:', canvas);
+    if (!canvas) {
+        console.error('❌ 找不到monthlyGrowthChart元素！');
+        return;
+    }
+    
+    console.log('2. Canvas尺寸:', canvas.width, 'x', canvas.height);
+    console.log('3. Canvas父元素:', canvas.parentElement);
+    
+    // 获取2D上下文
+    let monthlyCtx;
+    try {
+        monthlyCtx = canvas.getContext('2d');
+        console.log('4. 2D上下文获取成功:', monthlyCtx);
+    } catch (e) {
+        console.error('❌ 无法获取2D上下文:', e);
+        return;
+    }
+    
+    console.log('5. 开始请求API...');
+    fetch('/get-platform-monthly-trends/')
+        .then(response => {
+            console.log('6. API响应状态:', response.status);
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('7. API数据接收成功');
+            console.log('   - success:', data.success);
+            console.log('   - 平台数量:', data.platforms ? data.platforms.length : 0);
+            console.log('   - 月份数量:', data.months ? data.months.length : 0);
+            
+            if (data.success && data.platforms && data.platforms.length > 0) {
+                console.log('8. 开始渲染图表...');
+                updateMonthlyChart(data, monthlyCtx);
+                console.log('✅ 图表渲染完成！');
+            } else {
+                console.error('❌ API返回失败或无数据:', data.error || '无平台数据');
+                // 显示无数据提示
+                const ctx = canvas.getContext('2d');
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#666';
+                ctx.textAlign = 'center';
+                ctx.fillText('暂无数据', canvas.width / 2, canvas.height / 2);
+            }
+        })
+        .catch(error => {
+            console.error('❌ 请求出错:', error);
+            // 显示错误提示
+            const ctx = canvas.getContext('2d');
+            ctx.font = '16px Arial';
+            ctx.fillStyle = '#f00';
+            ctx.textAlign = 'center';
+            ctx.fillText('加载失败: ' + error.message, canvas.width / 2, canvas.height / 2);
+        });
+}
+
+function updateMonthlyChart(data, ctx) {
+    console.log('updateMonthlyChart 调用');
+    console.log('  - 数据:', data);
+    console.log('  - 上下文:', ctx);
+    
+    // 销毁现有图表
+    if (monthlyChart) {
+        console.log('  - 销毁旧图表');
+        monthlyChart.destroy();
+    }
+    
+    // 检查数据
+    if (!data.platforms || data.platforms.length === 0) {
+        console.error('  ❌ 没有平台数据');
+        return;
+    }
+    
+    // 构建数据集
+    const datasets = data.platforms.map(platform => ({
+        label: platform.platform,
+        data: platform.data.map(item => item.count),
+        borderColor: platform.color,
+        backgroundColor: platform.color + '20', // 添加透明度
+        tension: 0.1,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 6
+    }));
+    
+    console.log('  - 数据集数量:', datasets.length);
+    console.log('  - 标签数量:', data.months.length);
+    
+    // 创建新图表
+    try {
+        monthlyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.months,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '数据数量'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '时间'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return '时间: ' + context[0].label;
+                        },
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' 条数据';
+                        }
+                    }
+                }
+            }
+        }
+    });
+        console.log('  ✅ Chart对象创建成功:', monthlyChart);
+    } catch (e) {
+        console.error('  ❌ 创建图表失败:', e);
+        throw e;
+    }
+}
+
+// 每日增长趋势图 - 按平台和项目分组
+const dailyCtx = document.getElementById('dailyGrowthChart').getContext('2d');
+let dailyChart;
+
+// 加载平台项目每日趋势数据
+function loadPlatformProjectDailyTrends() {
+    console.log('开始加载平台项目每日趋势数据...');
+    fetch('/get-platform-project-daily-trends/')
+        .then(response => {
+            console.log('每日趋势API响应状态:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('每日趋势API数据:', data);
+            if (data.success) {
+                console.log('每日趋势数据加载成功，平台项目数量:', data.platform_project_trends.length);
+                updateDailyChart(data);
+            } else {
+                console.error('加载平台项目每日趋势数据失败:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('请求平台项目每日趋势数据出错:', error);
+        });
+}
+
+function updateDailyChart(data) {
+    // 销毁现有图表
+    if (dailyChart) {
+        dailyChart.destroy();
+    }
+    
+    // 构建数据集
+    const datasets = data.platform_project_trends.map(pp => ({
+        label: `${pp.platform} - ${pp.project}`,
+        data: pp.data.map(item => item.count),
+        backgroundColor: pp.color + '80', // 添加透明度
+        borderColor: pp.color,
+        borderWidth: 1,
+        fill: false
+    }));
+    
+    // 创建新图表
+    dailyChart = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: data.dates.map(date => date.substr(5)), // 只显示月-日
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '评论数量'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '日期'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return '日期: ' + context[0].label;
+                        },
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' 条评论';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 页面加载完成后获取数据
+document.addEventListener('DOMContentLoaded', function() {
+    loadPlatformMonthlyTrends();
+    loadPlatformProjectDailyTrends();
+});
+
+// 平台分布饼图
+const platformCtx = document.getElementById('platformChart').getContext('2d');
+const platformData = {{ platform_distribution|safe }};
+console.log('平台分布数据:', platformData);
+
+const platformChart = new Chart(platformCtx, {
+    type: 'doughnut',
+    data: {
+        labels: platformData.map(item => item.platform),
+        datasets: [{
+            data: platformData.map(item => item.count),
+            backgroundColor: [
+                '#2563eb', '#10b981', '#f59e0b', '#ef4444',
+                '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    generateLabels: function(chart) {
+                        const data = chart.data;
+                        if (data.labels.length && data.datasets.length) {
+                            const dataset = data.datasets[0];
+                            const total = dataset.data.reduce((a, b) => a + b, 0);
+                            
+                            return data.labels.map((label, index) => {
+                                const value = dataset.data[index];
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return {
+                                    text: `${label}: ${value} (${percentage}%)`,
+                                    fillStyle: dataset.backgroundColor[index],
+                                    strokeStyle: dataset.backgroundColor[index],
+                                    lineWidth: 0,
+                                    hidden: false,
+                                    index: index
+                                };
+                            });
+                        }
+                        return [];
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                        return context.label + ': ' + context.parsed + ' 条评论 (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+

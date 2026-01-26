@@ -1,0 +1,744 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load spider_tags %}
+
+{% block title %}情感分析{% endblock %}
+
+{% block extra_css %}
+<style>
+/* 简洁清新的设计 */
+:root {
+    --primary-blue: #2196f3;
+    --light-blue: #e3f2fd;
+    --dark-gray: #424242;
+    --light-gray: #f5f5f5;
+    --white: #ffffff;
+    --success: #4caf50;
+    --danger: #f44336;
+    --warning: #ff9800;
+}
+
+body {
+    background: var(--light-gray);
+    font-family: 'Microsoft YaHei', 'Arial', sans-serif;
+    color: var(--dark-gray);
+}
+
+/* 简洁头部 */
+.page-header {
+    background: var(--white);
+    border-bottom: 2px solid var(--primary-blue);
+    padding: 20px 0;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    color: var(--dark-gray);
+    font-size: 1.8rem;
+    font-weight: 500;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.page-title i {
+    margin-right: 10px;
+    color: var(--primary-blue);
+}
+
+/* 简化的筛选区域 */
+.filter-section {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    min-width: 150px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--dark-gray);
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+.btn-primary {
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-primary:hover {
+    background: #1976d2;
+}
+
+/* 简化的数据卡片 */
+.data-card {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--dark-gray);
+    border-bottom: 2px solid var(--light-blue);
+    padding-bottom: 8px;
+}
+
+/* KPI指标 - 简化设计 */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.kpi-item {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--primary-blue);
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin-bottom: 5px;
+}
+
+.kpi-label {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+}
+
+/* 图表容器 */
+.chart-container {
+    background: var(--white);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 450px;
+    overflow: hidden;
+}
+
+.chart-container canvas {
+    max-height: 100%;
+    width: 100% !important;
+    height: auto !important;
+}
+
+.chart-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--dark-gray);
+}
+
+/* 数据表格 */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+    background: var(--light-blue);
+    font-weight: 600;
+    color: var(--dark-gray);
+}
+
+.data-table tr:hover {
+    background: #f9f9f9;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .filter-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .form-group {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 简洁页面头部 -->
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-chart-line"></i>
+            情感数据分析
+        </div>
+    </div>
+
+    <!-- 简化的筛选区域 -->
+    <div class="filter-section">
+        <div class="filter-row">
+            <div class="form-group">
+                <label>平台</label>
+                <select class="form-control" id="platform">
+                    <option value="">全部平台</option>
+                    {% for stat in platform_stats %}
+                    <option value="{{ stat.source_c }}">{{ stat.source_c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>项目</label>
+                <select class="form-control" id="project">
+                    <option value="">全部项目</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>分析类型</label>
+                <select class="form-control" id="analysis_type">
+                    <option value="monthly">月度趋势</option>
+                    <option value="yearly">年度对比</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <button type="button" class="btn-primary" onclick="loadTrendData()">
+                    <i class="fas fa-search"></i> 分析
+                </button>
+            </div>
+            
+            <div class="form-group">
+                <a href="/platform-statistics/" class="btn-primary" style="text-decoration: none; color: inherit;">
+                    <i class="fas fa-chart-bar"></i> 平台统计
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI指标卡片 -->
+    <div class="kpi-grid">
+        <div class="kpi-item">
+            <div class="kpi-value">{{ total_sentiments|floatformat:0 }}</div>
+            <div class="kpi-label">总数据量</div>
+        </div>
+        <div class="kpi-item">
+            <div class="kpi-value">{{ positive_rate|floatformat:1 }}%</div>
+            <div class="kpi-label">正面情感率</div>
+        </div>
+        <div class="kpi-item">
+            <div class="kpi-value">{{ negative_rate|floatformat:1 }}%</div>
+            <div class="kpi-label">负面情感率</div>
+        </div>
+        <div class="kpi-item">
+            <div class="kpi-value">{{ avg_confidence|floatformat:2 }}</div>
+            <div class="kpi-label">分析准确率</div>
+        </div>
+    </div>
+
+    <!-- 主要趋势图表 -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="fas fa-chart-line"></i>
+            情感趋势分析
+        </div>
+        <canvas id="trendChart"></canvas>
+    </div>
+
+    <!-- 平台项目趋势分析 -->
+    <div class="chart-container">
+        <div class="chart-title">
+            <i class="fas fa-chart-bar"></i>
+            平台项目趋势分析
+        </div>
+        
+        <!-- 平台趋势图表 -->
+        <div style="margin-bottom: 30px; height: 350px;">
+            <h5 style="color: var(--primary-blue); margin-bottom: 15px;">平台数据增长趋势</h5>
+            <canvas id="platformTrendChart"></canvas>
+        </div>
+        
+        <!-- 项目趋势图表 -->
+        <div style="height: 350px;">
+            <h5 style="color: var(--primary-blue); margin-bottom: 15px;">热门项目趋势分析</h5>
+            <canvas id="projectTrendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 平台数据表格 -->
+    <div class="data-card">
+        <div class="card-title">
+            <i class="fas fa-table"></i>
+            平台数据统计
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>平台名称</th>
+                        <th>数据总量</th>
+                        <th>正面</th>
+                        <th>负面</th>
+                        <th>中性</th>
+                        <th>平均评分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in platform_stats %}
+                    <tr>
+                        <td><strong>{{ stat.source_c }}</strong></td>
+                        <td>{{ stat.total }}</td>
+                        <td class="text-success">{{ stat.positive }}</td>
+                        <td class="text-danger">{{ stat.negative }}</td>
+                        <td class="text-info">{{ stat.neutral }}</td>
+                        <td>{{ stat.avg_rating|floatformat:1 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 项目数据表格 -->
+    <div class="data-card">
+        <div class="card-title">
+            <i class="fas fa-list"></i>
+            热门项目排行
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>项目名称</th>
+                        <th>讨论热度</th>
+                        <th>情感分布</th>
+                        <th>综合评分</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in project_stats %}
+                    <tr>
+                        <td><strong>{{ stat.poiName|truncatechars:30 }}</strong></td>
+                        <td>{{ stat.total }}</td>
+                        <td>
+                            <span style="color: #4caf50;">正面{{ stat.positive }}</span> | 
+                            <span style="color: #f44336;">负面{{ stat.negative }}</span> | 
+                            <span style="color: #2196f3;">中性{{ stat.neutral }}</span>
+                        </td>
+                        <td>{{ stat.avg_rating|floatformat:1 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let trendChart = null;
+let platformTrendChart = null;
+let projectTrendChart = null;
+
+$(document).ready(function() {
+    // 初始化图表
+    initTrendChart();
+    initPlatformTrendChart();
+    initProjectTrendChart();
+    
+    // 平台选择变化
+    $('#platform').change(function() {
+        loadProjects();
+    });
+    
+    // 分析类型变化
+    $('#analysis_type').change(function() {
+        loadTrendData();
+        loadPlatformProjectTrends();
+    });
+    
+    // 初始加载
+    $('#platform').trigger('change');
+    loadTrendData();
+    loadPlatformProjectTrends();
+});
+
+function initTrendChart() {
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    
+    // 创建基础图表
+    trendChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: '正面情感',
+                    data: [],
+                    backgroundColor: 'rgba(76, 175, 80, 0.8)',
+                    borderColor: '#4caf50',
+                    borderWidth: 1
+                },
+                {
+                    label: '负面情感',
+                    data: [],
+                    backgroundColor: 'rgba(244, 67, 54, 0.8)',
+                    borderColor: '#f44336',
+                    borderWidth: 1
+                },
+                {
+                    label: '中性情感',
+                    data: [],
+                    backgroundColor: 'rgba(33, 150, 243, 0.8)',
+                    borderColor: '#2196f3',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.5,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    stacked: false,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    stacked: false,
+                    maxBarThickness: 60,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 10,
+                    bottom: 10,
+                    left: 10,
+                    right: 10
+                }
+            }
+        }
+    });
+}
+
+function loadTrendData() {
+    const platform = $('#platform').val();
+    const project = $('#project').val();
+    const analysisType = $('#analysis_type').val();
+    
+    // 显示加载状态
+    showLoading();
+    
+    $.get('/get-monthly-trend-data/', {
+        platform: platform,
+        project: project,
+        analysis_type: analysisType
+    }).done(function(response) {
+        if (response.success) {
+            updateChart(response.monthly_data);
+        } else {
+            showError('数据加载失败');
+        }
+    }).fail(function() {
+        showError('网络请求失败');
+    }).always(function() {
+        hideLoading();
+    });
+}
+
+function updateChart(data) {
+    if (!trendChart || !data.length) return;
+    
+    const labels = data.map(item => item.label);
+    const positiveData = data.map(item => item.positive);
+    const negativeData = data.map(item => item.negative);
+    const neutralData = data.map(item => item.neutral);
+    
+    trendChart.data.labels = labels;
+    trendChart.data.datasets[0].data = positiveData;
+    trendChart.data.datasets[1].data = negativeData;
+    trendChart.data.datasets[2].data = neutralData;
+    
+    trendChart.update();
+}
+
+function loadProjects() {
+    const platform = $('#platform').val();
+    const projectSelect = $('#project');
+    
+    if (platform) {
+        projectSelect.html('<option value="">加载中...</option>');
+        
+        $.get('/get-projects-by-platform/', {platform: platform})
+            .done(function(data) {
+                if (data.success) {
+                    projectSelect.html('<option value="">全部项目</option>');
+                    data.projects.forEach(function(project) {
+                        projectSelect.append('<option value="' + project + '">' + project + '</option>');
+                    });
+                } else {
+                    projectSelect.html('<option value="">加载失败</option>');
+                }
+            });
+    } else {
+        projectSelect.html('<option value="">全部项目</option>');
+    }
+}
+
+function showLoading() {
+    // 简单的加载提示
+    $('.kpi-value').html('<i class="fas fa-spinner fa-spin"></i>');
+}
+
+function hideLoading() {
+    // 恢复原始数据显示
+}
+
+function initPlatformTrendChart() {
+    const ctx = document.getElementById('platformTrendChart').getContext('2d');
+    
+    platformTrendChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '数据总量',
+                data: [],
+                backgroundColor: 'rgba(33, 150, 243, 0.6)',
+                borderColor: 'rgba(33, 150, 243, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.5,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    maxBarThickness: 50,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    maxBarThickness: 50,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 10,
+                    bottom: 10,
+                    left: 10,
+                    right: 10
+                }
+            }
+        }
+    });
+}
+
+function initProjectTrendChart() {
+    const ctx = document.getElementById('projectTrendChart').getContext('2d');
+    
+    projectTrendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: []
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 2.5,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            layout: {
+                padding: {
+                    top: 10,
+                    bottom: 10,
+                    left: 10,
+                    right: 10
+                }
+            }
+        }
+    });
+}
+
+function loadPlatformProjectTrends() {
+    const platform = $('#platform').val();
+    const project = $('#project').val();
+    const analysisType = $('#analysis_type').val();
+    
+    $.get('/get-platform-project-trends/', {
+        platform: platform,
+        project: project,
+        analysis_type: analysisType
+    }).done(function(response) {
+        if (response.success) {
+            updatePlatformProjectCharts(response);
+        } else {
+            showError('平台项目趋势数据加载失败: ' + (response.error || '未知错误'));
+        }
+    }).fail(function() {
+        showError('网络请求失败');
+    });
+}
+
+function updatePlatformProjectCharts(data) {
+    // 更新平台趋势图表
+    updatePlatformTrendChart(data.platforms_data);
+    
+    // 更新项目趋势图表
+    updateProjectTrendChart(data.projects_data);
+}
+
+function updatePlatformTrendChart(platformsData) {
+    if (!platformTrendChart || !platformsData.length) return;
+    
+    const labels = [];
+    const data = [];
+    
+    for (let platform of platformsData) {
+        labels.push(platform.platform);
+        data.push(platform.total_count);
+    }
+    
+    platformTrendChart.data.labels = labels;
+    platformTrendChart.data.datasets[0].data = data;
+    platformTrendChart.update();
+}
+
+function updateProjectTrendChart(projectsData) {
+    if (!projectTrendChart || !projectsData.length) return;
+    
+    // 获取所有时间标签
+    const labels = [];
+    if (projectsData.length > 0 && projectsData[0].trend_data.length > 0) {
+        projectsData[0].trend_data.forEach(item => labels.push(item.label));
+    }
+    
+    // 为每个项目创建数据集
+    const datasets = [];
+    const colors = [
+        'rgba(76, 175, 80, 0.8)', // 绿色  
+        'rgba(244, 67, 54, 0.8)', // 红色
+        'rgba(33, 150, 243, 0.8)', // 蓝色
+        'rgba(255, 152, 0, 0.8)',  // 橙色
+        'rgba(156, 39, 176, 0.8)', // 紫色
+    ];
+    
+    // 只显示前5个项目
+    projectsData.slice(0, 5).forEach((project, index) => {
+        const projectData = project.trend_data.map(item => item.count);
+        
+        datasets.push({
+            label: project.project.length > 15 ? 
+                   project.project.substring(0, 15) + '...' : 
+                   project.project,
+            data: projectData,
+            borderColor: colors[index % colors.length],
+            backgroundColor: colors[index % colors.length],
+            tension: 0.4,
+            fill: false
+        });
+    });
+    
+    projectTrendChart.data.labels = labels;
+    projectTrendChart.data.datasets = datasets;
+    projectTrendChart.update();
+}
+
+function showError(message) {
+    console.error(message);
+    // 简单的错误提示
+}
+</script>
+{% endblock %}

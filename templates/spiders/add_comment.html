@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}添加评论{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>添加评论
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="addForm">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">用户名 <span class="text-danger">*</span></label>
+                                    <input type="text" name="user_name" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">评分 <span class="text-danger">*</span></label>
+                                    <select name="comment_grade" class="form-select" required>
+                                        <option value="">请选择评分</option>
+                                        <option value="1">1星</option>
+                                        <option value="2">2星</option>
+                                        <option value="3">3星</option>
+                                        <option value="4">4星</option>
+                                        <option value="5">5星</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">项目 <span class="text-danger">*</span></label>
+                            <select name="poi_id" class="form-select" required>
+                                <option value="">请选择项目</option>
+                                {% for project in projects %}
+                                <option value="{{ project.poid }}">{{ project.IteamName }} ({{ project.SalesChannel }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">评论内容 <span class="text-danger">*</span></label>
+                            <textarea name="comment_content" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>保存
+                            </button>
+                            <a href="{% url 'data_management' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>返回
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('addForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('/add-comment/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('添加成功');
+            window.location.href = '/data-management/';
+        } else {
+            alert('添加失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('添加失败');
+    });
+});
+</script>
+{% endblock %}

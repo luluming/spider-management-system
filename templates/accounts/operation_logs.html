@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}操作日志 - 数据管理系统{% endblock %}
+
+{% block page_title %}操作日志{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list-alt me-2"></i>
+            操作日志
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>用户</th>
+                        <th>操作类型</th>
+                        <th>操作描述</th>
+                        <th>IP地址</th>
+                        <th>操作时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in page_obj %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                <span>{{ log.user.username }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if log.action == 'login' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-sign-in-alt me-1"></i>登录
+                            </span>
+                            {% elif log.action == 'logout' %}
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-sign-out-alt me-1"></i>登出
+                            </span>
+                            {% elif log.action == 'change_password' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-key me-1"></i>修改密码
+                            </span>
+                            {% elif log.action == 'view_data' %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-eye me-1"></i>查看数据
+                            </span>
+                            {% elif log.action == 'export_data' %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-download me-1"></i>导出数据
+                            </span>
+                            {% elif log.action == 'create_user' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-user-plus me-1"></i>创建用户
+                            </span>
+                            {% elif log.action == 'edit_user' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-user-edit me-1"></i>编辑用户
+                            </span>
+                            {% elif log.action == 'delete_user' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-user-times me-1"></i>删除用户
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ log.action }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="log-description" style="max-width: 400px;">
+                                {{ log.description }}
+                            </div>
+                        </td>
+                        <td>
+                            <code>{{ log.ip_address }}</code>
+                        </td>
+                        <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                            <p>暂无操作日志</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="分页导航">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">首页</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">末页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        <div class="text-center text-muted">
+            显示第 {{ page_obj.start_index }} - {{ page_obj.end_index }} 条，共 {{ page_obj.paginator.count }} 条记录
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+

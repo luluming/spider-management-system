@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}用户登录 - 数据管理系统{% endblock %}
+
+{% block auth_content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg mt-5">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-database me-2"></i>
+                        数据管理系统
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- 用户名 -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                <i class="fas fa-user me-1"></i>用户名
+                            </label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        
+                        <!-- 密码 -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>密码
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        
+                        <!-- 验证码 -->
+                        <div class="mb-3">
+                            <label for="captcha" class="form-label">
+                                <i class="fas fa-shield-alt me-1"></i>验证码
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="captcha" name="captcha" required>
+                                <button class="btn btn-outline-secondary" type="button" id="refresh-captcha">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <img id="captcha-img" src="data:image/png;base64,{{ captcha_img }}" alt="验证码" class="border rounded" style="width: 180px; height: 60px;">
+                            </div>
+                        </div>
+                        
+                        <!-- 登录按钮 -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>登录
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-blue: #2563eb;
+        --light-blue: #3b82f6;
+        --dark-blue: #1d4ed8;
+        --white: #ffffff;
+        --light-gray: #f8fafc;
+        --medium-gray: #e2e8f0;
+        --dark-gray: #64748b;
+        --text-gray: #475569;
+    }
+    
+    body {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--light-blue) 100%);
+        min-height: 100vh;
+    }
+    .card {
+        border: none;
+        border-radius: 15px;
+        background-color: var(--white);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        background-color: var(--primary-blue) !important;
+        border: none;
+    }
+    .form-control {
+        border-color: var(--medium-gray);
+        border-radius: 8px;
+    }
+    .form-control:focus {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+    }
+    .btn-primary {
+        background-color: var(--primary-blue);
+        border-color: var(--primary-blue);
+        border-radius: 8px;
+    }
+    .btn-primary:hover {
+        background-color: var(--dark-blue);
+        border-color: var(--dark-blue);
+    }
+    .btn-outline-secondary {
+        border-color: var(--medium-gray);
+        color: var(--text-gray);
+    }
+    .btn-outline-secondary:hover {
+        background-color: var(--light-gray);
+        border-color: var(--dark-gray);
+        color: var(--text-gray);
+    }
+</style>
+
+<script>
+$(document).ready(function() {
+    // 刷新验证码
+    $('#refresh-captcha').click(function() {
+        $.get('{% url "refresh_captcha" %}', function(data) {
+            if (data.success) {
+                $('#captcha-img').attr('src', 'data:image/png;base64,' + data.captcha_img);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

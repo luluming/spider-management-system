@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}用户管理 - 数据管理系统{% endblock %}
+
+{% block page_title %}用户管理{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-users me-2"></i>
+            用户列表
+        </h5>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="fas fa-plus me-1"></i>添加用户
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>角色</th>
+                        <th>部门</th>
+                        <th>电话</th>
+                        <th>注册时间</th>
+                        <th>最后登录</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in page_obj %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if user.userprofile.avatar %}
+                                <img src="{{ user.userprofile.avatar.url }}" alt="头像" class="rounded-circle me-2" width="32" height="32">
+                                {% else %}
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                    <i class="fas fa-user text-white"></i>
+                                </div>
+                                {% endif %}
+                                <span>{{ user.username }}</span>
+                            </div>
+                        </td>
+                        <td>{{ user.email|default:"-" }}</td>
+                        <td>
+                            {% if user.userprofile.role == 'admin' %}
+                            <span class="badge bg-danger">管理员</span>
+                            {% else %}
+                            <span class="badge bg-secondary">普通用户</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.userprofile.department|default:"-" }}</td>
+                        <td>{{ user.userprofile.phone|default:"-" }}</td>
+                        <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                        <td>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                        <td>
+                            {% if user.is_active %}
+                            <span class="badge bg-success">活跃</span>
+                            {% else %}
+                            <span class="badge bg-secondary">禁用</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="editUser({{ user.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if user.id != request.user.id %}
+                                <button class="btn btn-outline-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            <i class="fas fa-users fa-3x mb-3"></i>
+                            <p>暂无用户数据</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 分页 -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="分页导航">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">首页</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">末页</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 添加用户模态框 -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addUserForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">角色</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="department" class="form-label">部门</label>
+                        <input type="text" class="form-control" id="department" name="department">
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">电话</label>
+                        <input type="text" class="form-control" id="phone" name="phone">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑用户模态框 -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑用户</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editUserForm">
+                <input type="hidden" id="edit_user_id" name="user_id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="edit_username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_email" class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="edit_email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_password" class="form-label">新密码（留空不修改）</label>
+                        <input type="password" class="form-control" id="edit_password" name="password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_role" class="form-label">角色</label>
+                        <select class="form-select" id="edit_role" name="role">
+                            <option value="user">普通用户</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_department" class="form-label">部门</label>
+                        <input type="text" class="form-control" id="edit_department" name="department">
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_phone" class="form-label">电话</label>
+                        <input type="text" class="form-control" id="edit_phone" name="phone">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="edit_is_active" name="is_active">
+                            <label class="form-check-label" for="edit_is_active">
+                                用户状态（活跃）
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 添加用户
+$('#addUserForm').submit(function(e) {
+    e.preventDefault();
+    
+    $.ajax({
+        url: '/accounts/create-user/',
+        type: 'POST',
+        data: $(this).serialize(),
+        success: function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('添加失败：' + data.message);
+            }
+        },
+        error: function() {
+            alert('添加失败，请重试');
+        }
+    });
+});
+
+// 编辑用户
+function editUser(userId) {
+    // 这里应该通过AJAX获取用户信息
+    // 简化处理，直接显示模态框
+    $('#edit_user_id').val(userId);
+    $('#editUserModal').modal('show');
+}
+
+$('#editUserForm').submit(function(e) {
+    e.preventDefault();
+    
+    var userId = $('#edit_user_id').val();
+    
+    $.ajax({
+        url: '/accounts/edit-user/' + userId + '/',
+        type: 'POST',
+        data: $(this).serialize(),
+        success: function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('保存失败：' + data.message);
+            }
+        },
+        error: function() {
+            alert('保存失败，请重试');
+        }
+    });
+});
+
+// 删除用户
+function deleteUser(userId, username) {
+    if (confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) {
+        $.ajax({
+            url: '/accounts/delete-user/' + userId + '/',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('删除失败：' + data.message);
+                }
+            },
+            error: function() {
+                alert('删除失败，请重试');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
+
+
