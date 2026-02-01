@@ -156,30 +156,27 @@ function showFullContent(button) {
     modal.show();
 }
 
-// 处理分页链接点击
-$(document).on('click', '.pagination-link', function(e) {
+// 处理分页链接点击（使用委托与 fetch）
+document.addEventListener('click', async function(e) {
+    var el = e.target.closest('.pagination-link');
+    if (!el) return;
     e.preventDefault();
-    var page = $(this).data('page');
-    
-    // 获取当前筛选条件
-    var formData = $('#filter-form').serialize();
-    formData += '&page_size=' + $('#page_size').val();
-    formData += '&page=' + page;
-    
-    // AJAX 请求
-    $.ajax({
-        url: '{% url "comments_list" %}',
-        type: 'GET',
-        data: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        success: function(data) {
-            $('#comments-list').html(data);
-        },
-        error: function() {
-            $('#comments-list').html('<div class="alert alert-danger">加载数据失败，请重试</div>');
-        }
-    });
+    var page = el.dataset.page;
+
+    try {
+        var params = new URLSearchParams(new FormData(document.getElementById('filter-form')));
+        var pageSizeElem = document.getElementById('page_size');
+        if (pageSizeElem) params.set('page_size', pageSizeElem.value);
+        params.set('page', page);
+
+        var resp = await fetch('{% url "comments_list" %}?' + params.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!resp.ok) throw new Error('Network response was not ok');
+        var html = await resp.text();
+        document.getElementById('comments-list').innerHTML = html;
+    } catch (err) {
+        document.getElementById('comments-list').innerHTML = '<div class="alert alert-danger">加载数据失败，请重试</div>';
+    }
 });
 </script>

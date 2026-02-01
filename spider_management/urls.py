@@ -27,3 +27,8 @@ urlpatterns = [
 # 开发环境下提供媒体文件服务
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# 当 DEBUG=False 且没有前端静态文件服务器时，提供静态文件服务（仅用于临时恢复）
+if not settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+

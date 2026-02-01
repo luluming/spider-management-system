@@ -1,473 +1,396 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}配置管理{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
-                        <i class="fas fa-sliders-h me-2"></i>配置管理
-                    </h4>
-                    <div>
-                        <button class="btn btn-primary" onclick="showAddModal()">
-                            <i class="fas fa-plus me-1"></i>新增配置
-                        </button>
-                        <button class="btn btn-info" onclick="refreshData()">
-                            <i class="fas fa-sync me-1"></i>刷新
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- 筛选条件 -->
-                <div class="card-body">
-                    <form method="GET" class="row g-3 mb-4">
-                        <div class="col-md-3">
-                            <label class="form-label">平台筛选</label>
-                            <select name="platform" class="form-select">
-                                <option value="">全部平台</option>
-                                {% for platform in platforms %}
-                                <option value="{{ platform }}" {% if current_filters.platform == platform %}selected{% endif %}>
-                                    {{ platform }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">状态筛选</label>
-                            <select name="status" class="form-select">
-                                <option value="">全部状态</option>
-                                {% for status in statuses %}
-                                <option value="{{ status }}" {% if current_filters.status == status %}selected{% endif %}>
-                                    {{ status }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">关键词搜索</label>
-                            <input type="text" name="search" class="form-control" placeholder="搜索标题、平台或URL" 
-                                   value="{{ current_filters.search }}">
-                        </div>
-                        <div class="col-md-1">
-                            <label class="form-label">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary d-block w-100">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </form>
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-semibold font-serif text-retro-heading"><i class="fas fa-sliders-h mr-2 text-primary-600"></i> 配置管理</h2>
+    <div class="flex items-center space-x-2">
+      <button class="px-3 py-2 rounded-md bg-primary-600 text-white btn-retro" x-on:click="$dispatch('open-add-modal')"> <i class="fas fa-plus mr-1"></i> 新增配置</button>
+      <button class="px-3 py-2 rounded-md bg-white border text-muted btn-retro-secondary" onclick="refreshData()"> <i class="fas fa-sync me-1"></i> 刷新</button>
+  </div>
 
-                    <!-- 数据表格 -->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>项目名称(IteamName)</th>
-                                    <th>销售渠道(SalesChannel)</th>
-                                    <th>行业(industry)</th>
-                                    <th>请求数据(request_data)</th>
-                                    <th>项目ID(project_id)</th>
-                                    <th>项目状态(IteamState)</th>
-                                    <th>POI ID(poid)</th>
-                                    <th>排序(sort_type)</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for spider in spiders %}
-                                <tr>
-                                    <td>
-                                        <small class="text-muted">{{ spider.id }}</small>
-                                    </td>
-                                    <td>{{ spider.IteamName|default:"-" }}</td>
-                                    <td>{{ spider.SalesChannel|default:"-" }}</td>
-                                    <td>{{ spider.industry|default:"-" }}</td>
-                                    <td><small class="text-muted">{{ spider.request_data|default:"-" }}</small></td>
-                                    <td>{{ spider.project_id|default:"-" }}</td>
-                                    <td>{{ spider.IteamState|default:"-" }}</td>
-                                    <td>{{ spider.poid|default:"-" }}</td>
-                                    <td>{{ spider.sort_type|default:"-" }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="viewSpider({{ spider.id }})" title="查看">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-outline-warning" onclick="editSpider({{ spider.id }})" title="编辑">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger" onclick="deleteSpider({{ spider.id }})" title="删除">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
-                                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                        暂无数据
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+  <div class="card-soft p-4">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+      <div class="md:col-span-3">
+        <label class="block text-sm text-muted mb-1">平台筛选</label>
+        <select name="platform" class="w-full border rounded px-2 py-2">
+          <option value="">全部平台</option>
+          {% for platform in platforms %}
+          <option value="{{ platform }}" {% if current_filters.platform == platform %}selected{% endif %}>{{ platform }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-3">
+        <label class="block text-sm text-muted mb-1">状态筛选</label>
+        <select name="status" class="w-full border rounded px-2 py-2">
+          <option value="">全部状态</option>
+          {% for status in statuses %}
+          <option value="{{ status }}" {% if current_filters.status == status %}selected{% endif %}>{{ status }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-4">
+        <label class="block text-sm text-muted mb-1">关键词搜索</label>
+        <input type="text" name="search" class="w-full border rounded px-2 py-2" placeholder="搜索标题、平台或URL" value="{{ current_filters.search }}">
+      </div>
+      <div class="md:col-span-2 flex items-end">
+        <button type="submit" class="w-full px-3 py-2 rounded-md bg-primary-600 text-white"> <i class="fas fa-search mr-1"></i> 搜索</button>
+      </div>
+    </form>
 
-                    <!-- 分页 -->
-                    {% if pagination.total_pages > 1 %}
-                    <nav aria-label="分页导航">
-                        <ul class="pagination justify-content-center">
-                            {% if pagination.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ pagination.previous_page }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                                    上一页
-                                </a>
-                            </li>
-                            {% endif %}
-                            
-                            {% for page_num in pagination.page_range %}
-                            <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
-                                <a class="page-link" href="?page={{ page_num }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                                    {{ page_num }}
-                                </a>
-                            </li>
-                            {% endfor %}
-                            
-                            {% if pagination.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ pagination.next_page }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                                    下一页
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                    {% endif %}
-
-                    <!-- 统计信息 -->
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <small class="text-muted">
-                                显示第 {{ pagination.current_page }} 页，共 {{ pagination.total_pages }} 页，
-                                总计 {{ pagination.total_count }} 条记录
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto divide-y">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">ID</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">项目名称</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">销售渠道</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">行业</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">请求数据</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">项目ID</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">状态</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">POI</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">排序</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y bg-white">
+          {% for spider in spiders %}
+          <tr>
+            <td class="px-4 py-2"><small class="text-muted">{{ spider.id }}</small></td>
+            <td class="px-4 py-2">{{ spider.IteamName|default:"-" }}</td>
+            <td class="px-4 py-2">{{ spider.SalesChannel|default:"-" }}</td>
+            <td class="px-4 py-2">{{ spider.industry|default:"-" }}</td>
+            <td class="px-4 py-2"><small class="text-muted">{{ spider.request_data|default:"-" }}</small></td>
+            <td class="px-4 py-2">{{ spider.project_id|default:"-" }}</td>
+            <td class="px-4 py-2">{{ spider.IteamState|default:"-" }}</td>
+            <td class="px-4 py-2">{{ spider.poid|default:"-" }}</td>
+            <td class="px-4 py-2">{{ spider.sort_type|default:"-" }}</td>
+            <td class="px-4 py-2">
+              <div class="inline-flex items-center space-x-1">
+                <button class="px-2 py-1 rounded border text-sm" onclick="viewSpider({{ spider.id }})" title="查看"><i class="fas fa-eye"></i></button>
+                <button class="px-2 py-1 rounded border text-sm" onclick="editSpider({{ spider.id }})" title="编辑"><i class="fas fa-edit"></i></button>
+                <button class="px-2 py-1 rounded border text-sm text-red-600" onclick="deleteSpider({{ spider.id }})" title="删除"><i class="fas fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td class="px-4 py-8 text-center text-muted" colspan="10">
+              <i class="fas fa-inbox fa-2x mb-2"></i><br>暂无数据
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+
+    <!-- Pagination -->
+    {% if pagination.total_pages > 1 %}
+    <div class="mt-4 flex items-center justify-center">
+      <nav class="inline-flex -space-x-px" aria-label="分页导航">
+        {% if pagination.has_previous %}
+        <a href="?page={{ pagination.previous_page }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1 border rounded-l">上一页</a>
+        {% endif %}
+        {% for page_num in pagination.page_range %}
+        <a href="?page={{ page_num }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1 border {% if page_num == pagination.current_page %}bg-primary-600 text-white{% endif %}">{{ page_num }}</a>
+        {% endfor %}
+        {% if pagination.has_next %}
+        <a href="?page={{ pagination.next_page }}{% for key, value in current_filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}" class="px-3 py-1 border rounded-r">下一页</a>
+        {% endif %}
+      </nav>
+    </div>
+    {% endif %}
+
+    <div class="mt-3 text-sm text-muted">
+      显示第 {{ pagination.current_page }} 页，共 {{ pagination.total_pages }} 页，总计 {{ pagination.total_count }} 条记录
+    </div>
+  </div>
 </div>
 
-<!-- 新增配置模态框 -->
-<div class="modal fade" id="addModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">新增配置</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="addForm">
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">项目名称(IteamName) <span class="text-danger">*</span></label>
-                                <input type="text" name="IteamName" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">销售渠道(SalesChannel) <span class="text-danger">*</span></label>
-                                <input type="text" name="SalesChannel" class="form-control" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">行业(industry)</label>
-                                <input type="text" name="industry" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">项目ID(project_id)</label>
-                                <input type="text" name="project_id" class="form-control">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">请求数据(request_data)</label>
-                        <textarea name="request_data" class="form-control" rows="3" placeholder='例如: {"url": "..."}'></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">项目状态(IteamState)</label>
-                                <input type="text" name="IteamState" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">POI ID(poid)</label>
-                                <input type="number" name="poid" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">排序(sort_type)</label>
-                                <input type="text" name="sort_type" class="form-control">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">保存</button>
-                </div>
-            </form>
+<!-- Add Modal (Alpine) -->
+<div x-data="{ showAdd: false }" x-on:open-add-modal.window="showAdd = true" x-on:close-add-modal.window="showAdd = false">
+  <div x-show="showAdd" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg w-full max-w-3xl p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">新增配置</h3>
+        <button @click="showAdd=false" class="text-muted">✕</button>
+      </div>
+      <form id="addForm" class="mt-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">项目名称(IteamName) <span class="text-red-500">*</span></label>
+            <input type="text" name="IteamName" class="w-full border rounded px-2 py-2" required>
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">销售渠道(SalesChannel) <span class="text-red-500">*</span></label>
+            <input type="text" name="SalesChannel" class="w-full border rounded px-2 py-2" required>
+          </div>
         </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">行业(industry)</label>
+            <input type="text" name="industry" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">项目ID(project_id)</label>
+            <input type="text" name="project_id" class="w-full border rounded px-2 py-2">
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="block text-sm text-muted mb-1">请求数据(request_data)</label>
+          <textarea name="request_data" rows="3" class="w-full border rounded px-2 py-2" placeholder='例如: {"url": "..."}'></textarea>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">项目状态(IteamState)</label>
+            <input type="text" name="IteamState" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">POI ID(poid)</label>
+            <input type="number" name="poid" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">排序(sort_type)</label>
+            <input type="text" name="sort_type" class="w-full border rounded px-2 py-2">
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end space-x-2">
+          <button type="button" @click="showAdd=false" class="px-3 py-2 rounded border">取消</button>
+          <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white">保存</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
-<!-- 查看爬虫模态框 -->
-<div class="modal fade" id="viewModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">爬虫详情</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="viewModalBody">
-                <!-- 内容将通过JavaScript动态加载 -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-            </div>
-        </div>
+<!-- View Modal (Alpine) -->
+<div x-data="{ showView: false, viewHtml: '' }" x-on:open-view-modal.window="showView = true; viewHtml = $event.detail.html" x-on:close-view-modal.window="showView = false">
+  <div x-show="showView" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg w-full max-w-3xl p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">爬虫详情</h3>
+        <button @click="showView=false" class="text-muted">✕</button>
+      </div>
+      <div class="mt-4" x-html="viewHtml"></div>
+      <div class="mt-4 text-right">
+        <button @click="showView=false" class="px-3 py-2 rounded border">关闭</button>
+      </div>
     </div>
+  </div>
 </div>
 
-<!-- 编辑爬虫模态框 -->
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">编辑配置</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="editForm">
-                <div class="modal-body">
-                    <input type="hidden" name="spider_id" id="editSpiderId">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">项目名称(IteamName) <span class="text-danger">*</span></label>
-                                <input type="text" name="IteamName" id="editIteamName" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">销售渠道(SalesChannel) <span class="text-danger">*</span></label>
-                                <input type="text" name="SalesChannel" id="editSalesChannel" class="form-control" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">行业(industry)</label>
-                                <input type="text" name="industry" id="editIndustry" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">项目ID(project_id)</label>
-                                <input type="text" name="project_id" id="editProjectId" class="form-control">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">请求数据(request_data)</label>
-                        <textarea name="request_data" id="editRequestData" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">项目状态(IteamState)</label>
-                                <input type="text" name="IteamState" id="editIteamState" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">POI ID(poid)</label>
-                                <input type="number" name="poid" id="editPoid" class="form-control">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label class="form-label">排序(sort_type)</label>
-                                <input type="text" name="sort_type" id="editSortType" class="form-control">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">保存</button>
-                </div>
-            </form>
+<!-- Edit Modal (Alpine) -->
+<div x-data="{ showEdit: false }" x-on:open-edit-modal.window="showEdit = true" x-on:close-edit-modal.window="showEdit = false">
+  <div x-show="showEdit" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg w-full max-w-3xl p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">编辑配置</h3>
+        <button @click="showEdit=false" class="text-muted">✕</button>
+      </div>
+      <form id="editForm" class="mt-4">
+        <input type="hidden" name="spider_id" id="editSpiderId">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">项目名称(IteamName) <span class="text-red-500">*</span></label>
+            <input type="text" name="IteamName" id="editIteamName" class="w-full border rounded px-2 py-2" required>
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">销售渠道(SalesChannel) <span class="text-red-500">*</span></label>
+            <input type="text" name="SalesChannel" id="editSalesChannel" class="w-full border rounded px-2 py-2" required>
+          </div>
         </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">行业(industry)</label>
+            <input type="text" name="industry" id="editIndustry" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">项目ID(project_id)</label>
+            <input type="text" name="project_id" id="editProjectId" class="w-full border rounded px-2 py-2">
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="block text-sm text-muted mb-1">请求数据(request_data)</label>
+          <textarea name="request_data" id="editRequestData" rows="3" class="w-full border rounded px-2 py-2"></textarea>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">项目状态(IteamState)</label>
+            <input type="text" name="IteamState" id="editIteamState" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">POI ID(poid)</label>
+            <input type="number" name="poid" id="editPoid" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">排序(sort_type)</label>
+            <input type="text" name="sort_type" id="editSortType" class="w-full border rounded px-2 py-2">
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end space-x-2">
+          <button type="button" @click="showEdit=false" class="px-3 py-2 rounded border">取消</button>
+          <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white">保存</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        // 添加爬虫表单提交
-        $('#addForm').on('submit', function(e) {
-            e.preventDefault();
+    // Helper to read CSRF token from meta tag
+    function getCSRFToken() {
+        var m = document.querySelector('meta[name="csrf-token"]');
+        return m ? m.getAttribute('content') : '';
+    }
 
-            $.ajax({
-                url: '/add-spider/',
-                type: 'POST',
-                data: $(this).serialize(),
-                success: function(response) {
-                    if (response.success) {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add spider
+        var addForm = document.getElementById('addForm');
+        if (addForm) {
+            addForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                var formData = new FormData(addForm);
+                try {
+                    var resp = await fetch('/add-spider/', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCSRFToken() },
+                        body: formData
+                    });
+                    var data = await resp.json();
+                    if (data.success) {
                         alert('添加成功！');
-                        $('#addModal').modal('hide');
+                        window.dispatchEvent(new CustomEvent('close-add-modal'));
                         location.reload();
                     } else {
-                        alert('添加失败：' + response.message);
+                        alert('添加失败：' + (data.message || '未知错误'));
                     }
-                },
-                error: function() {
-                    alert('请求失败，请重试');
-                }
-            });
-        });
-
-        // 编辑爬虫表单提交
-        $('#editForm').on('submit', function(e) {
-            e.preventDefault();
-
-            var spiderId = $('#editSpiderId').val();
-
-            $.ajax({
-                url: '/edit-spider/' + spiderId + '/',
-                type: 'POST',
-                data: $(this).serialize(),
-                success: function(response) {
-                    if (response.success) {
-                        alert('编辑成功！');
-                        $('#editModal').modal('hide');
-                        location.reload();
-                    } else {
-                        alert('编辑失败：' + response.message);
-                    }
-                },
-                error: function() {
-                    alert('请求失败，请重试');
-                }
-            });
-        });
-    });
-
-    // 显示添加模态框
-    function showAddModal() {
-        const modal = new bootstrap.Modal(document.getElementById('addModal'));
-        modal.show();
-    }
-
-    // 查看爬虫详情
-    function viewSpider(spiderId) {
-        $.get('/get-spider-detail/' + spiderId + '/', function(response) {
-            if (response.success) {
-                var s = response.spider;
-                var html = `
-                    <div class="row">
-                        <div class="col-md-4"><strong>ID:</strong> ${s.id}</div>
-                        <div class="col-md-4"><strong>项目名称:</strong> ${s.IteamName || '-'}</div>
-                        <div class="col-md-4"><strong>销售渠道:</strong> ${s.SalesChannel || '-'}</div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-4"><strong>行业:</strong> ${s.industry || '-'}</div>
-                        <div class="col-md-4"><strong>项目ID:</strong> ${s.project_id || '-'}</div>
-                        <div class="col-md-4"><strong>项目状态:</strong> ${s.IteamState || '-'}</div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-md-4"><strong>POI ID:</strong> ${s.poid || '-'}</div>
-                        <div class="col-md-4"><strong>排序:</strong> ${s.sort_type || '-'}</div>
-                    </div>
-                    <div class="mt-3">
-                        <strong>请求数据:</strong>
-                        <pre class="bg-light p-2 border rounded" style="white-space: pre-wrap;">${s.request_data || ''}</pre>
-                    </div>
-                `;
-                $('#viewModalBody').html(html);
-                const modal = new bootstrap.Modal(document.getElementById('viewModal'));
-                modal.show();
-            } else {
-                alert('获取详情失败：' + response.message);
-            }
-        });
-    }
-
-    // 编辑爬虫
-    function editSpider(spiderId) {
-        $.get('/get-spider-detail/' + spiderId + '/', function(response) {
-            if (response.success) {
-                var s = response.spider;
-                $('#editSpiderId').val(s.id);
-                $('#editIteamName').val(s.IteamName || '');
-                $('#editSalesChannel').val(s.SalesChannel || '');
-                $('#editIndustry').val(s.industry || '');
-                $('#editProjectId').val(s.project_id || '');
-                $('#editRequestData').val(s.request_data || '');
-                $('#editIteamState').val(s.IteamState || '');
-                $('#editPoid').val(s.poid || '');
-                $('#editSortType').val(s.sort_type || '');
-
-                const modal = new bootstrap.Modal(document.getElementById('editModal'));
-                modal.show();
-            } else {
-                alert('获取详情失败：' + response.message);
-            }
-        });
-    }
-
-    // 删除爬虫
-    function deleteSpider(spiderId) {
-        if (confirm('确定要删除该爬虫数据吗？')) {
-            $.ajax({
-                url: '/delete-spider/' + spiderId + '/',
-                type: 'POST',
-                success: function(response) {
-                    if (response.success) {
-                        alert('删除成功！');
-                        location.reload();
-                    } else {
-                        alert('删除失败：' + response.message);
-                    }
-                },
-                error: function() {
+                } catch (err) {
                     alert('请求失败，请重试');
                 }
             });
         }
+
+        // Edit spider
+        var editForm = document.getElementById('editForm');
+        if (editForm) {
+            editForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                var spiderId = document.getElementById('editSpiderId').value;
+                var formData = new FormData(editForm);
+                try {
+                    var resp = await fetch('/edit-spider/' + spiderId + '/', {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': getCSRFToken() },
+                        body: formData
+                    });
+                    var data = await resp.json();
+                    if (data.success) {
+                        alert('编辑成功！');
+                        window.dispatchEvent(new CustomEvent('close-edit-modal'));
+                        location.reload();
+                    } else {
+                        alert('编辑失败：' + (data.message || '未知错误'));
+                    }
+                } catch (err) {
+                    alert('请求失败，请重试');
+                }
+            });
+        }
+    });
+
+    // Show add modal -> trigger Alpine
+    function showAddModal() {
+        window.dispatchEvent(new CustomEvent('open-add-modal'));
     }
 
-    // 刷新数据
-    function refreshData() {
-        location.reload();
+    // View spider details
+    async function viewSpider(spiderId) {
+        try {
+            var resp = await fetch('/get-spider-detail/' + spiderId + '/');
+            var response = await resp.json();
+            if (response.success) {
+                var s = response.spider;
+                var html = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div><strong>ID:</strong> ${s.id}</div>
+                        <div><strong>项目名称:</strong> ${s.IteamName || '-'}</div>
+                        <div><strong>销售渠道:</strong> ${s.SalesChannel || '-'}</div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div><strong>行业:</strong> ${s.industry || '-'}</div>
+                        <div><strong>项目ID:</strong> ${s.project_id || '-'}</div>
+                        <div><strong>项目状态:</strong> ${s.IteamState || '-'}</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                        <div><strong>POI ID:</strong> ${s.poid || '-'}</div>
+                        <div><strong>排序:</strong> ${s.sort_type || '-'}</div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>请求数据:</strong>
+                        <pre class="bg-gray-100 p-2 border rounded" style="white-space: pre-wrap;">${s.request_data || ''}</pre>
+                    </div>
+                `;
+                window.dispatchEvent(new CustomEvent('open-view-modal', { detail: { html: html } }));
+            } else {
+                alert('获取详情失败：' + (response.message || '未知错误'));
+            }
+        } catch (err) {
+            alert('请求失败，请重试');
+        }
+    }
+
+    // Edit spider - populate fields and open modal
+    async function editSpider(spiderId) {
+        try {
+            var resp = await fetch('/get-spider-detail/' + spiderId + '/');
+            var response = await resp.json();
+            if (response.success) {
+                var s = response.spider;
+                document.getElementById('editSpiderId').value = s.id;
+                document.getElementById('editIteamName').value = s.IteamName || '';
+                document.getElementById('editSalesChannel').value = s.SalesChannel || '';
+                document.getElementById('editIndustry').value = s.industry || '';
+                document.getElementById('editProjectId').value = s.project_id || '';
+                document.getElementById('editRequestData').value = s.request_data || '';
+                document.getElementById('editIteamState').value = s.IteamState || '';
+                document.getElementById('editPoid').value = s.poid || '';
+                document.getElementById('editSortType').value = s.sort_type || '';
+
+                window.dispatchEvent(new CustomEvent('open-edit-modal'));
+            } else {
+                alert('获取详情失败：' + (response.message || '未知错误'));
+            }
+        } catch (err) {
+            alert('请求失败，请重试');
+        }
+    }
+
+    // Delete spider
+    async function deleteSpider(spiderId) {
+        if (!confirm('确定要删除此配置吗？')) return;
+        try {
+            var resp = await fetch('/delete-spider/' + spiderId + '/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            });
+            var data = await resp.json();
+            if (data.success) {
+                alert('删除成功');
+                location.reload();
+            } else {
+                alert('删除失败：' + (data.message || '未知错误'));
+            }
+        } catch (err) {
+            alert('请求失败，请重试');
+        }
     }
 </script>
 {% endblock %}

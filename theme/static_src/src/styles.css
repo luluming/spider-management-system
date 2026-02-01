@@ -1,0 +1,10 @@
+@import './_tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-family: var(--font-sans); }
+  h1 { font-size: var(--h1-size); }
+}

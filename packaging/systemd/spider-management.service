@@ -1,0 +1,20 @@
+[Unit]
+Description=Spider Management System
+After=network.target
+# Rate-limit restart attempts
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/spider_management_system
+# The following placeholder will be replaced by `scripts/install_service.sh` with the actual ExecStart command
+# e.g. ExecStart=/usr/bin/env uwsgi --ini /opt/spider_management_system/uwsgi.ini
+ExecStart={{EXEC_START}}
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

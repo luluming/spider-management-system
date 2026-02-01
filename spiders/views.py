@@ -465,24 +465,22 @@ def get_platform_project_daily_trends(request):
             if not pp_poi_ids:
                 continue
             
-            # 构建OR条件查询多个日期
-            or_conditions = []
-            params = list(pp_poi_ids)
-            for date in daily_dates:
-                or_conditions.append('DATE(release_time) = %s')
-                params.append(date)
-            
-            where_clause = f"poiId IN ({','.join(['%s'] * len(pp_poi_ids))}) AND ({' OR '.join(or_conditions)}) AND YEAR(release_time) BETWEEN 2020 AND 2030"
-            
-            # 查询每日数据
-            daily_data = QusetAnswer.objects.extra(
-                select={'date': 'DATE(release_time)'},
-                where=[where_clause],
-                params=params
-            ).values('date').annotate(count=Count('comment_id'))
-            
-            # 创建查找字典
-            daily_dict = {item['date']: item['count'] for item in daily_data}
+            # 查询每日数据（使用ORM以保证跨数据库兼容性）
+            # 注意：避免使用数据库特定的 YEAR() 函数，使用 release_time__date 进行日期匹配
+            daily_queryset = QusetAnswer.objects.filter(
+                poiId__in=pp_poi_ids,
+                release_time__date__in=[d for d in daily_dates],
+                release_time__year__gte=2020,
+                release_time__year__lte=2030
+            ).values('release_time__date').annotate(count=Count('comment_id'))
+
+            # 兼容不同 DB 返回的键名
+            daily_dict = {}
+            for item in daily_queryset:
+                key = item.get('release_time__date') or item.get('date')
+                if hasattr(key, 'strftime'):
+                    key = key.strftime('%Y-%m-%d')
+                daily_dict[key] = item['count']
             
             # 构建该平台项目的数据
             pp_data = []

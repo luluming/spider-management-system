@@ -1,0 +1,75 @@
+/* Retro theme overrides - clean & minimal retro look */
+:root{
+  --retro-bg: #f7f3ee; /* warm paper */
+  --retro-panel: #fffaf6; /* panel */
+  --retro-border: #e6d8c8;
+  --retro-accent: #b36b3a; /* burnt orange */
+  --retro-accent-dark: #8a4e2a;
+  --retro-muted: #6b5a4a;
+  --retro-heading: #3b2f2f;
+}
+
+body {
+  background-color: var(--retro-bg);
+  color: var(--retro-muted);
+}
+
+/* Serif headings for retro feel */
+.font-serif, h1, h2, h3, h4 {
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--retro-heading) !important;
+}
+
+/* Retro panels / cards */
+.card-retro, .card-soft {
+  background: linear-gradient(180deg, var(--retro-panel), #fff);
+  border: 1px solid var(--retro-border);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  border-radius: 8px;
+}
+
+/* Retro buttons */
+.btn-retro {
+  background: var(--retro-accent);
+  color: white !important;
+  border: 1px solid var(--retro-accent-dark);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.btn-retro:hover { background: var(--retro-accent-dark); }
+
+/* Muted secondary buttons */
+.btn-retro-secondary {
+  background: transparent;
+  color: var(--retro-muted);
+  border: 1px solid var(--retro-border);
+}
+
+/* Table styling */
+.table-retro th {
+  background: transparent;
+  color: var(--retro-heading);
+  font-weight: 600;
+  border-bottom: 1px solid var(--retro-border);
+}
+.table-retro td {
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+/* Pagination */
+.pagination-link {
+  background: transparent;
+  border: 1px solid var(--retro-border);
+  color: var(--retro-muted);
+}
+
+/* Make modals slightly warmer */
+.modal-content {
+  background: var(--retro-panel);
+  border: 1px solid var(--retro-border);
+}
+
+/* Small utility */
+.text-retro-heading { color: var(--retro-heading) !important; }

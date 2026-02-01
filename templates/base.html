@@ -216,6 +216,43 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script>
+    // 🔧 CSRF helper: 从 cookie 获取 csrftoken，并为 AJAX/fetch 自动设置 X-CSRFToken
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // jQuery 全局配置：为所有非安全方法设置 CSRF 头
+    if (window.jQuery) {
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    const token = csrftoken || $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val();
+                    if (token) xhr.setRequestHeader('X-CSRFToken', token);
+                }
+            }
+        });
+    }
+
+    // fetch 封装：自动添加 CSRF 头并设置同源 cookie 策略
+    function csrfFetch(url, options) {
+        options = options || {};
+        options.method = options.method || 'GET';
+        options.headers = options.headers || {};
+        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(options.method)) {
+            const token = csrftoken || document.querySelector('[name=csrfmiddlewaretoken]')?.value || document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+            if (token) options.headers['X-CSRFToken'] = token;
+        }
+        // 确保同源请求携带 cookie
+        options.credentials = options.credentials || 'same-origin';
+        return fetch(url, options);
+    }
+    </script>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -180,30 +180,49 @@ systemctl restart nginx
 
 ### 2. 使用systemd管理服务
 
-创建 `/etc/systemd/system/spider-management.service` 文件：
+项目已包含一个更健壮的 systemd unit 模板：`packaging/systemd/spider-management.service`（推荐使用非 root 用户运行，例如 `www-data` 或自建 `spider` 用户）。示例 unit 如下：
+
 ```ini
 [Unit]
 Description=Spider Management System
 After=network.target
 
 [Service]
-User=root
-Group=root
+User=www-data
+Group=www-data
 WorkingDirectory=/opt/spider_management_system
-ExecStart=/usr/local/bin/uwsgi --ini uwsgi.ini
+ExecStart=/usr/bin/env uwsgi --ini /opt/spider_management_system/uwsgi.ini
 Restart=always
+RestartSec=5
+StartLimitBurst=5
+StartLimitIntervalSec=60
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-启动服务：
+也提供了安装脚本 `scripts/install_service.sh`，在项目根目录运行（需 sudo，或在非 `/etc` 目标路径上以非 root 运行进行测试）：
+
 ```bash
-systemctl daemon-reload
-systemctl enable spider-management
-systemctl start spider-management
-systemctl status spider-management
+# 默认行为（复制模板、reload、enable 并启动）
+sudo bash scripts/install_service.sh
+
+# 指定 uwsgi 可执行路径与 ini 文件（自动替换 unit 中的 ExecStart）
+sudo bash scripts/install_service.sh --uwsgi-path /opt/venv/bin/uwsgi --ini /opt/spider_management_system/uwsgi.ini
+
+# 指定安装位置（用于测试或非系统安装）
+bash scripts/install_service.sh --dest /tmp/spider-management.service  # 在非 /etc 下可不使用 sudo
+
+# 仅演示（不执行写入/重载/enable）
+bash scripts/install_service.sh --dry-run
 ```
+
+新说明：
+- 脚本支持 `--uwsgi-path`、`--ini`、`--user`、`--create-user`、`--dest` 和 `--dry-run` 参数，能够自动替换 unit 中的 `{{EXEC_START}}` 占位符。
+- 若使用虚拟环境，请通过 `--uwsgi-path` 指定虚拟环境内的 `uwsgi` 的绝对路径，脚本会把它写入 unit 的 `ExecStart`。
+- 当目标路径为 `/etc/systemd/system/...` 时脚本会尝试运行 `systemctl daemon-reload` 和 `systemctl enable --now`（需要 root 权限）。
+- 默认使用 `www-data` 作为运行用户；可通过 `--user` 更改，或使用 `--create-user` 创建系统用户。
 
 ## 系统维护
 

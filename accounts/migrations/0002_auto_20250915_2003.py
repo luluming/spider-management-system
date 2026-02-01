@@ -9,11 +9,8 @@ class Migration(migrations.Migration):
         ('accounts', '0001_initial'),
     ]
 
-    operations = [
-        migrations.AddField(
-            model_name='operationlog',
-            name='action',
-            field=models.CharField(max_length=50, verbose_name='操作类型', default='login'),
-            preserve_default=False,
-        ),
-    ]
+    # This migration was originally intended to add the 'action' field,
+    # but the initial migration already includes the field. To avoid
+    # duplicate column errors in test databases we intentionally skip
+    # performing any operations here.
+    operations = []

@@ -9,10 +9,5 @@ class Migration(migrations.Migration):
         ('accounts', '0005_auto_20250915_2019'),
     ]
 
-    operations = [
-        migrations.AddField(
-            model_name='userprofile',
-            name='avatar',
-            field=models.ImageField(blank=True, null=True, upload_to='avatars/', verbose_name='头像'),
-        ),
-    ]
+    # Already present in initial migration; skip to avoid duplicate column errors.
+    operations = []

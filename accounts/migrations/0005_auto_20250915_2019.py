@@ -9,11 +9,5 @@ class Migration(migrations.Migration):
         ('accounts', '0004_auto_20250915_2019'),
     ]
 
-    operations = [
-        migrations.AddField(
-            model_name='operationlog',
-            name='created_at',
-            field=models.DateTimeField(auto_now_add=True, verbose_name='操作时间', default='2025-09-15 12:00:00'),
-            preserve_default=False,
-        ),
-    ]
+    # Already present in initial migration; skip to avoid duplicate column errors.
+    operations = []

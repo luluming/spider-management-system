@@ -1,75 +1,106 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}用户管理{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
-                        <i class="fas fa-users me-2"></i>用户管理
-                    </h4>
-                    <div>
-                        <button class="btn btn-primary" onclick="showAddModal()">
-                            <i class="fas fa-plus me-1"></i>添加用户
-                        </button>
-                        <button class="btn btn-info" onclick="refreshData()">
-                            <i class="fas fa-sync me-1"></i>刷新
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- 筛选条件 -->
-                <div class="card-body">
-                    <form id="searchForm" class="row g-3 mb-4" method="post" action="/user-management/">
-                        {% csrf_token %}
-                        <div class="col-md-3">
-                            <label class="form-label">平台筛选</label>
-                            <select name="platform" id="platformSelect" class="form-select">
-                                <option value="">全部平台</option>
-                                {% for platform in platforms %}
-                                <option value="{{ platform }}" {% if current_filters.platform == platform %}selected{% endif %}>
-                                    {{ platform }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">项目筛选</label>
-                            <select name="project" id="projectSelect" class="form-select">
-                                <option value="">全部项目</option>
-                                {% for project in projects %}
-                                <option value="{{ project.title }}" {% if current_filters.project == project.title %}selected{% endif %}>
-                                    {{ project.title }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">关键词搜索</label>
-                            <input type="text" name="search" class="form-control" placeholder="搜索用户名、邮箱或姓名" 
-                                   value="{{ current_filters.search }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary d-block w-100">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- 数据表格 -->
-                    <div id="user-management-content">
-                        {% include 'spiders/user_management_content.html' %}
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-semibold"><i class="fas fa-users mr-2 text-primary-600"></i> 用户管理</h2>
+    <div class="flex items-center space-x-2">
+      <button class="px-3 py-2 rounded-md bg-primary-600 text-white" @click="showAdd = true"> <i class="fas fa-plus mr-1"></i> 添加用户</button>
+      <button class="px-3 py-2 rounded-md bg-white border text-muted" onclick="refreshData()"> <i class="fas fa-sync-alt mr-1"></i> 刷新</button>
     </div>
+  </div>
+
+  <div class="card-soft p-4">
+    <form id="searchForm" class="grid grid-cols-1 md:grid-cols-8 gap-4 mb-4" method="post" action="/user-management/">
+      {% csrf_token %}
+      <div class="md:col-span-2">
+        <label class="block text-sm text-muted mb-1">平台筛选</label>
+        <select name="platform" id="platformSelect" class="w-full border rounded px-2 py-2">
+          <option value="">全部平台</option>
+          {% for platform in platforms %}
+          <option value="{{ platform }}" {% if current_filters.platform == platform %}selected{% endif %}>{{ platform }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <label class="block text-sm text-muted mb-1">项目筛选</label>
+        <select name="project" id="projectSelect" class="w-full border rounded px-2 py-2">
+          <option value="">全部项目</option>
+          {% for project in projects %}
+          <option value="{{ project.title }}" {% if current_filters.project == project.title %}selected{% endif %}>{{ project.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-3">
+        <label class="block text-sm text-muted mb-1">关键词搜索</label>
+        <input type="text" name="search" class="w-full border rounded px-2 py-2" placeholder="搜索用户名、邮箱或姓名" value="{{ current_filters.search }}">
+      </div>
+      <div class="md:col-span-1 flex items-end">
+        <button type="submit" class="w-full px-3 py-2 rounded-md bg-primary-600 text-white"><i class="fas fa-search mr-1"></i> 搜索</button>
+      </div>
+    </form>
+
+    <div id="user-management-content">
+      {% include 'spiders/user_management_content.html' %}
+    </div>
+  </div>
 </div>
+
+<!-- 添加用户模态（Alpine） -->
+<div x-data="{ showAdd: false }">
+  <div x-show="showAdd" x-on:close-add-modal.window="showAdd=false" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg w-full max-w-2xl p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">添加用户</h3>
+        <button @click="showAdd=false" class="text-muted">✕</button>
+      </div>
+      <form id="addForm" method="post" action="/add-user/">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="text-sm text-muted">用户名 <span class="text-red-500">*</span></label>
+            <input type="text" name="username" class="w-full border rounded px-2 py-2" required>
+          </div>
+          <div>
+            <label class="text-sm text-muted">邮箱 <span class="text-red-500">*</span></label>
+            <input type="email" name="email" class="w-full border rounded px-2 py-2" required>
+          </div>
+          <div>
+            <label class="text-sm text-muted">密码 <span class="text-red-500">*</span></label>
+            <input type="password" name="password" id="addPassword" class="w-full border rounded px-2 py-2" required>
+          </div>
+          <div>
+            <label class="text-sm text-muted">确认密码 <span class="text-red-500">*</span></label>
+            <input type="password" name="confirm_password" id="addConfirmPassword" class="w-full border rounded px-2 py-2" required>
+            <div id="passwordMismatchError" class="text-red-500 text-sm mt-1 hidden">两次输入的密码不一致</div>
+          </div>
+          <div>
+            <label class="text-sm text-muted">姓</label>
+            <input type="text" name="first_name" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="text-sm text-muted">名</label>
+            <input type="text" name="last_name" class="w-full border rounded px-2 py-2">
+          </div>
+          <div class="flex items-center space-x-4">
+            <label class="inline-flex items-center"><input type="checkbox" name="is_staff" class="mr-2"> 管理员权限</label>
+            <label class="inline-flex items-center"><input type="checkbox" name="is_active" checked class="mr-2"> 激活账户</label>
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-end space-x-2">
+          <button type="button" @click="showAdd=false" class="px-3 py-2 rounded-md border">取消</button>
+          <button type="submit" class="px-4 py-2 rounded-md bg-primary-600 text-white">添加</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
 
 <!-- 添加用户模态框 -->
 <div class="modal fade" id="addModal" tabindex="-1">

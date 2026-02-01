@@ -1,265 +1,104 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 
 {% block title %}仪表板 - 数据管理系统{% endblock %}
 
 {% block page_title %}仪表板{% endblock %}
 
 {% block content %}
-<!-- 统计卡片 -->
-<div class="row mb-4">
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card stat-card h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">总评论数</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ total_comments|default:0 }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-comments fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card stat-card success h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">分析数据</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ total_sentiment|default:0 }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-pie fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card stat-card warning h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">总点赞数</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ total_likes|default:0 }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-thumbs-up fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card stat-card info h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">总回复数</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ total_replies|default:0 }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-reply fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card stat-card h-100 py-2" style="background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">活跃用户</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ active_users|default:0 }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-users fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-2 col-md-4 mb-4">
-        <div class="card stat-card h-100 py-2" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">平台数量</div>
-                        <div class="h5 mb-0 font-weight-bold">{{ platform_stats|length }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-globe fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- 统计卡片 (Tailwind) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+  <div>{% include 'components/stat_card.html' with title='总评论数' value=total_comments|default:0 icon='fas fa-comments' bg='var(--color-primary-700)' fg='#fff' %}</div>
+  <div>{% include 'components/stat_card.html' with title='分析数据' value=total_sentiment|default:0 icon='fas fa-chart-pie' bg='var(--color-success)' fg='#fff' %}</div>
+  <div>{% include 'components/stat_card.html' with title='总点赞数' value=total_likes|default:0 icon='fas fa-thumbs-up' bg='var(--color-warning)' fg='#fff' %}</div>
+  <div>{% include 'components/stat_card.html' with title='总回复数' value=total_replies|default:0 icon='fas fa-reply' bg='var(--color-info)' fg='#fff' %}</div>
+  <div>{% include 'components/stat_card.html' with title='活跃用户' value=active_users|default:0 icon='fas fa-users' bg='linear-gradient(135deg, var(--color-accent) 0%, #a855f7 100%)' fg='#fff' %}</div>
+  <div>{% include 'components/stat_card.html' with title='平台数量' value=platform_stats|length icon='fas fa-globe' bg='linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)' fg='#fff' %}</div>
 </div>
 
-<!-- 今日数据统计 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-calendar-day me-2"></i>
-                    今日数据统计
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 text-center">
-                        <h3 class="text-primary">{{ today_sentiment|default:0 }}</h3>
-                        <p class="text-muted mb-0">今日新增分析数据</p>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <h3 class="text-success">{{ today_comments|default:0 }}</h3>
-                        <p class="text-muted mb-0">今日新增评论</p>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <h3 class="text-warning">{{ month_sentiment|default:0 }}</h3>
-                        <p class="text-muted mb-0">本月新增分析数据</p>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <h3 class="text-info">{{ year_sentiment|default:0 }}</h3>
-                        <p class="text-muted mb-0">本年新增分析数据</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<!-- 今日/摘要统计 -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+  <div class="col-span-1">
+    <div class="card-soft p-4">
+      <h3 class="text-sm font-medium text-muted">今日新增分析数据</h3>
+      <div class="text-2xl font-bold mt-2 text-primary">{{ today_sentiment|default:0 }}</div>
     </div>
+  </div>
+  <div class="col-span-1">
+    <div class="card-soft p-4">
+      <h3 class="text-sm font-medium text-muted">今日新增评论</h3>
+      <div class="text-2xl font-bold mt-2 text-success">{{ today_comments|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-span-1">
+    <div class="card-soft p-4">
+      <h3 class="text-sm font-medium text-muted">本月新增分析数据</h3>
+      <div class="text-2xl font-bold mt-2 text-warning">{{ month_sentiment|default:0 }}</div>
+    </div>
+  </div>
+  <div class="col-span-1">
+    <div class="card-soft p-4">
+      <h3 class="text-sm font-medium text-muted">本年新增分析数据</h3>
+      <div class="text-2xl font-bold mt-2 text-info">{{ year_sentiment|default:0 }}</div>
+    </div>
+  </div>
 </div>
 
-<!-- 数据增长趋势图表 -->
-<div class="row mb-4">
-    <!-- 月度增长趋势 -->
-    <div class="col-xl-8 col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-line me-2"></i>
-                    数据增长趋势（最近12个月）
-                </h5>
-            </div>
-            <div class="card-body" style="height: 400px;">
-                <canvas id="monthlyGrowthChart"></canvas>
-            </div>
-        </div>
+<!-- 图表与平台分布 -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+  <div class="lg:col-span-2">
+    <div class="card-soft p-4" style="height:400px;">
+      <h4 class="text-lg font-semibold mb-2">数据增长趋势（最近12个月）</h4>
+      <div class="h-full">
+        <canvas id="monthlyGrowthChart"></canvas>
+      </div>
     </div>
-    
-    <!-- 平台分布饼图 -->
-    <div class="col-xl-4 col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-pie me-2"></i>
-                    平台数据分布
-                </h5>
-            </div>
-            <div class="card-body">
-                <canvas id="platformChart" width="400" height="200"></canvas>
-            </div>
-        </div>
+  </div>
+  <div class="lg:col-span-1">
+    <div class="card-soft p-4">
+      <h4 class="text-lg font-semibold mb-2">平台数据分布</h4>
+      <canvas id="platformChart" width="400" height="200"></canvas>
     </div>
+  </div>
 </div>
 
 <!-- 每日增长趋势 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-area me-2"></i>
-                    每日数据增长（最近30天）
-                </h5>
-            </div>
-            <div class="card-body">
-                <canvas id="dailyGrowthChart" width="400" height="150"></canvas>
-            </div>
-        </div>
-    </div>
+<div class="card-soft p-4 mb-6">
+  <h4 class="text-lg font-semibold mb-2">每日数据增长（最近30天）</h4>
+  <canvas id="dailyGrowthChart" width="400" height="150"></canvas>
 </div>
 
 <!-- 平台详细统计表 -->
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-table me-2"></i>
-                    平台详细统计
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>平台</th>
-                                <th>分析数据量</th>
-                                <th>评论数据量</th>
-                                <th>项目数量</th>
-                                <th>平均点赞数</th>
-                                <th>平均回复数</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for stat in platform_stats %}
-                            <tr>
-                                <td>
-                                    <span class="badge bg-primary">{{ stat.platform }}</span>
-                                </td>
-                                <td>{{ stat.sentiment_count }}</td>
-                                <td>{{ stat.comment_count }}</td>
-                                <td>{{ stat.project_count }}</td>
-                                <td>{{ stat.avg_likes|floatformat:1 }}</td>
-                                <td>{{ stat.avg_replies|floatformat:1 }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="card-soft p-4">
+  <h4 class="text-lg font-semibold mb-4">平台详细统计</h4>
+  <div class="overflow-x-auto">
+    <table class="min-w-full table-auto divide-y">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">平台</th>
+          <th class="px-4 py-2 text-right text-sm font-medium text-muted">分析数据量</th>
+          <th class="px-4 py-2 text-right text-sm font-medium text-muted">评论数据量</th>
+          <th class="px-4 py-2 text-right text-sm font-medium text-muted">项目数量</th>
+          <th class="px-4 py-2 text-right text-sm font-medium text-muted">平均点赞数</th>
+          <th class="px-4 py-2 text-right text-sm font-medium text-muted">平均回复数</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for stat in platform_stats %}
+        <tr>
+          <td class="px-4 py-2"><span class="inline-block px-2 py-1 rounded bg-primary text-white text-sm">{{ stat.platform }}</span></td>
+          <td class="px-4 py-2 text-right">{{ stat.sentiment_count }}</td>
+          <td class="px-4 py-2 text-right">{{ stat.comment_count }}</td>
+          <td class="px-4 py-2 text-right">{{ stat.project_count }}</td>
+          <td class="px-4 py-2 text-right">{{ stat.avg_likes|floatformat:1 }}</td>
+          <td class="px-4 py-2 text-right">{{ stat.avg_replies|floatformat:1 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-<!-- 平台统计 -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-line me-2"></i>
-                    平台数据统计
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for platform in platform_stats %}
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <div class="card bg-light">
-                            <div class="card-body text-center">
-                                <h5 class="card-title">{{ platform.source_c }}</h5>
-                                <h3 class="text-primary">{{ platform.count }}</h3>
-                                <p class="card-text text-muted">评论数量</p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
+
 {% endblock %}
 
 {% block extra_js %}

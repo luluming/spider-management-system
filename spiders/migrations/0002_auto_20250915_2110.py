@@ -10,21 +10,5 @@ class Migration(migrations.Migration):
         ('spiders', '0001_initial'),
     ]
 
-    operations = [
-        migrations.CreateModel(
-            name='PSentiment',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('sentiment', models.CharField(choices=[('positive', '正面'), ('negative', '负面'), ('neutral', '中性')], max_length=20, verbose_name='情感倾向')),
-                ('confidence', models.FloatField(verbose_name='置信度')),
-                ('keywords', models.TextField(blank=True, null=True, verbose_name='关键词')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='创建时间')),
-                ('comment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='spiders.qusetanswer', verbose_name='评论')),
-            ],
-            options={
-                'verbose_name': '情感分析',
-                'verbose_name_plural': '情感分析',
-                'db_table': 'p_sentiment',
-            },
-        ),
-    ]
+    # PSentiment is already defined in initial migration; skip to avoid duplicate table errors in tests.
+    operations = []
