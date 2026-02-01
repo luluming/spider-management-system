@@ -1,0 +1,51 @@
+name: Playwright E2E
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt
+
+      - name: Run migrations & create test user
+        run: |
+          python manage.py migrate --noinput
+          python - <<PY
+from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username="playwright").exists():
+    User.objects.create_superuser("playwright", "playwright@example.com", "password")
+PY
+
+      - name: Start Django
+        run: nohup python manage.py runserver 0.0.0.0:8000 & sleep 3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install NPM deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test --config=playwright.config.js --workers=1
+        env:
+          # Avoid accidental Django production env leakage; ensure safe env.
+          DJANGO_SETTINGS_MODULE: spider_management.settings

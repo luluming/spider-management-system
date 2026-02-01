@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 
 {% block title %}评论数据 - 数据管理系统{% endblock %}
 
@@ -6,53 +6,47 @@
 
 {% block content %}
 <!-- 筛选表单 -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="fas fa-filter me-2"></i>
-            数据筛选
-        </h5>
+<div class="card-retro p-4 mb-4">
+    <div class="font-serif text-retro-heading mb-3 flex items-center">
+        <i class="fas fa-filter mr-3"></i>
+        <h3 class="text-lg font-semibold mb-0">数据筛选</h3>
     </div>
-    <div class="card-body">
+    <div>
         <form id="filter-form" method="get">
-            <div class="row">
-                <!-- 平台筛选 -->
-                <div class="col-md-2 mb-3">
-                    <label for="platform" class="form-label">平台</label>
-                    <select class="form-select" id="platform" name="platform">
+            <div class="grid grid-cols-1 sm:grid-cols-6 gap-4">
+                <div class="sm:col-span-1">
+                    <label for="platform" class="block text-sm font-medium text-gray-700">平台</label>
+                    <select id="platform" name="platform" class="border rounded px-2 py-1 w-full">
                         <option value="">全部平台</option>
                         {% for p in platforms %}
                         <option value="{{ p }}" {% if current_filters.platform == p %}selected{% endif %}>{{ p }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
-                <!-- 项目筛选 -->
-                <div class="col-md-2 mb-3">
-                    <label for="project" class="form-label">项目</label>
-                    <select class="form-select" id="project" name="project">
+
+                <div class="sm:col-span-1">
+                    <label for="project" class="block text-sm font-medium text-gray-700">项目</label>
+                    <select id="project" name="project" class="border rounded px-2 py-1 w-full">
                         <option value="">全部项目</option>
                         {% for p in projects %}
                         <option value="{{ p }}" {% if current_filters.project == p %}selected{% endif %}>{{ p }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                
-                <!-- 时间筛选 -->
-                <div class="col-md-2 mb-3">
-                    <label for="start_date" class="form-label">开始日期</label>
-                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ current_filters.start_date|default:'' }}">
+
+                <div class="sm:col-span-1">
+                    <label for="start_date" class="block text-sm font-medium text-gray-700">开始日期</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ current_filters.start_date|default:'' }}" class="border rounded px-2 py-1 w-full">
                 </div>
-                
-                <div class="col-md-2 mb-3">
-                    <label for="end_date" class="form-label">结束日期</label>
-                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ current_filters.end_date|default:'' }}">
+
+                <div class="sm:col-span-1">
+                    <label for="end_date" class="block text-sm font-medium text-gray-700">结束日期</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ current_filters.end_date|default:'' }}" class="border rounded px-2 py-1 w-full">
                 </div>
-                
-                <!-- 评分筛选 -->
-                <div class="col-md-1 mb-3">
-                    <label for="rating" class="form-label">评分</label>
-                    <select class="form-select" id="rating" name="rating">
+
+                <div class="sm:col-span-1">
+                    <label for="rating" class="block text-sm font-medium text-gray-700">评分</label>
+                    <select id="rating" name="rating" class="border rounded px-2 py-1 w-full">
                         <option value="">全部</option>
                         <option value="5" {% if current_filters.rating == "5" %}selected{% endif %}>5星</option>
                         <option value="4" {% if current_filters.rating == "4" %}selected{% endif %}>4星</option>
@@ -61,36 +55,31 @@
                         <option value="1" {% if current_filters.rating == "1" %}selected{% endif %}>1星</option>
                     </select>
                 </div>
-                
-                <!-- 关键词搜索 -->
-                <div class="col-md-2 mb-3">
-                    <label for="keyword" class="form-label">关键词</label>
-                    <input type="text" class="form-control" id="keyword" name="keyword" placeholder="用户名或内容" value="{{ current_filters.keyword }}">
-                </div>
-                
-                <!-- 排序方式 -->
-                <div class="col-md-1 mb-3">
-                    <label for="sort_by" class="form-label">排序</label>
-                    <select class="form-select" id="sort_by" name="sort_by">
-                        <option value="-publishTime" {% if current_filters.sort_by == "-publishTime" %}selected{% endif %}>时间</option>
-                        <option value="-rating" {% if current_filters.sort_by == "-rating" %}selected{% endif %}>评分</option>
-                        <option value="-likeCount" {% if current_filters.sort_by == "-likeCount" %}selected{% endif %}>点赞</option>
-                        <option value="-replyCount" {% if current_filters.sort_by == "-replyCount" %}selected{% endif %}>回复</option>
-                    </select>
+
+                <div class="sm:col-span-1">
+                    <label for="keyword" class="block text-sm font-medium text-gray-700">关键词</label>
+                    <input type="text" id="keyword" name="keyword" placeholder="用户名或内容" value="{{ current_filters.keyword }}" class="border rounded px-2 py-1 w-full">
                 </div>
             </div>
-            
-            <div class="row">
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="fas fa-search me-1"></i>筛选
-                    </button>
-                    <button type="button" class="btn btn-secondary me-2" id="reset-filters">
-                        <i class="fas fa-undo me-1"></i>重置
-                    </button>
-                    <button type="button" class="btn btn-success" id="export-data">
-                        <i class="fas fa-download me-1"></i>导出
-                    </button>
+
+            <div class="mt-4 flex gap-2">
+                <button type="submit" class="btn-retro btn-sm">
+                    <i class="fas fa-search mr-1"></i>筛选
+                </button>
+                <button type="button" class="btn-retro-secondary btn-sm" id="reset-filters">
+                    <i class="fas fa-undo mr-1"></i>重置
+                </button>
+                <button type="button" class="btn-retro btn-sm" id="export-data">
+                    <i class="fas fa-download mr-1"></i>导出
+                </button>
+                <div class="ml-auto">
+                    <label for="page_size" class="block text-sm font-medium text-gray-700">每页</label>
+                    <select id="page_size" name="page_size" class="border rounded px-2 py-1">
+                        <option value="10" {% if current_filters.page_size == 10 %}selected{% endif %}>10</option>
+                        <option value="20" {% if current_filters.page_size == 20 %}selected{% endif %}>20</option>
+                        <option value="50" {% if current_filters.page_size == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if current_filters.page_size == 100 %}selected{% endif %}>100</option>
+                    </select>
                 </div>
             </div>
         </form>
@@ -98,66 +87,58 @@
 </div>
 
 <!-- 统计信息 -->
-<div class="row mb-4" id="statistics-section">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">评论数量</div>
-                        <div class="h5 mb-0 font-weight-bold" id="stat-comments">-</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-comments fa-2x"></i>
-                    </div>
+<div id="statistics-section" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+    <div>
+        <div class="card-retro p-3 stat-card h-full">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <div class="text-xs uppercase text-gray-500">评论数量</div>
+                    <div class="text-2xl font-bold mt-1" id="stat-comments">-</div>
+                </div>
+                <div class="ml-4 text-primary">
+                    <i class="fas fa-comments fa-2x"></i>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card success h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">平均评分</div>
-                        <div class="h5 mb-0 font-weight-bold" id="stat-rating">-</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-star fa-2x"></i>
-                    </div>
+
+    <div>
+        <div class="card-retro p-3 stat-card h-full">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <div class="text-xs uppercase text-gray-500">平均评分</div>
+                    <div class="text-2xl font-bold mt-1" id="stat-rating">-</div>
+                </div>
+                <div class="ml-4 text-yellow-400">
+                    <i class="fas fa-star fa-2x"></i>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card warning h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">总点赞数</div>
-                        <div class="h5 mb-0 font-weight-bold" id="stat-likes">-</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-thumbs-up fa-2x"></i>
-                    </div>
+
+    <div>
+        <div class="card-retro p-3 stat-card h-full">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <div class="text-xs uppercase text-gray-500">总点赞数</div>
+                    <div class="text-2xl font-bold mt-1" id="stat-likes">-</div>
+                </div>
+                <div class="ml-4 text-green-500">
+                    <i class="fas fa-thumbs-up fa-2x"></i>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card stat-card info h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-uppercase mb-1">活跃用户</div>
-                        <div class="h5 mb-0 font-weight-bold" id="stat-users">-</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-users fa-2x"></i>
-                    </div>
+
+    <div>
+        <div class="card-retro p-3 stat-card h-full">
+            <div class="flex items-center">
+                <div class="flex-1">
+                    <div class="text-xs uppercase text-gray-500">活跃用户</div>
+                    <div class="text-2xl font-bold mt-1" id="stat-users">-</div>
+                </div>
+                <div class="ml-4 text-info">
+                    <i class="fas fa-users fa-2x"></i>
                 </div>
             </div>
         </div>
@@ -165,15 +146,15 @@
 </div>
 
 <!-- 评论列表 -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            <i class="fas fa-list me-2"></i>
+<div class="card-retro p-4">
+    <div class="font-serif text-retro-heading flex items-center justify-between">
+        <h5 class="mb-0 text-lg font-semibold">
+            <i class="fas fa-list mr-2"></i>
             评论列表
         </h5>
-        <div class="d-flex align-items-center">
-            <label for="page_size" class="form-label me-2 mb-0">每页显示:</label>
-            <select class="form-select form-select-sm" id="page_size" name="page_size" style="width: auto;">
+        <div class="flex items-center">
+            <label for="page_size" class="block text-sm font-medium text-gray-700 mr-2 mb-0">每页显示:</label>
+            <select id="page_size" name="page_size" class="border rounded px-2 py-1" style="width: auto;">
                 <option value="10" {% if current_filters.page_size == 10 %}selected{% endif %}>10</option>
                 <option value="20" {% if current_filters.page_size == 20 %}selected{% endif %}>20</option>
                 <option value="50" {% if current_filters.page_size == 50 %}selected{% endif %}>50</option>
@@ -182,104 +163,121 @@
         </div>
     </div>
     <div class="card-body" id="comments-list">
-        {% include 'spiders/comments_list_content.html' %}
+        {% include 'spiders/comments_list_content_tailwind.html' %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // 不设置默认日期，因为数据中的日期都是未来时间（2924年、2925年等）
-    // 用户需要手动选择日期范围来查询数据
-    
-    // 平台选择变化时加载项目列表
-    $('#platform').change(function() {
-        var platform = $(this).val();
-        var projectSelect = $('#project');
-        
-        if (platform) {
-            projectSelect.prop('disabled', true).html('<option value="">正在加载项目列表...</option>');
-            
-            $.get('{% url "get_projects_by_platform" %}', {platform: platform}, function(data) {
-                if (data.success) {
-                    projectSelect.html('<option value="">全部项目</option>');
-                    $.each(data.projects, function(index, project) {
-                        projectSelect.append('<option value="' + project + '">' + project + '</option>');
-                    });
-                }
-                projectSelect.prop('disabled', false);
-            });
-        } else {
-            projectSelect.html('<option value="">全部项目</option>');
-        }
-    });
-    
-    // 筛选表单提交
-    $('#filter-form').submit(function(e) {
-        e.preventDefault();
-        loadComments();
-    });
-    
-    // 重置筛选条件
-    $('#reset-filters').click(function() {
-        $('#filter-form')[0].reset();
-        $('#project').html('<option value="">全部项目</option>');
-        loadComments();
-    });
-    
-    // 页面大小变化
-    $('#page_size').change(function() {
-        loadComments();
-    });
-    
-    // 导出数据
-    $('#export-data').click(function() {
-        var form = $('#filter-form');
-        var url = '{% url "export_data" %}' + '?' + form.serialize() + '&format=excel';
-        window.open(url, '_blank');
-    });
-    
-    // 加载评论列表
-    function loadComments() {
-        var formData = $('#filter-form').serialize();
-        formData += '&page_size=' + $('#page_size').val();
-        
-        $.ajax({
-            url: '{% url "comments_list" %}',
-            type: 'GET',
-            data: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(data) {
-                $('#comments-list').html(data);
-            },
-            error: function() {
-                $('#comments-list').html('<div class="alert alert-danger">加载数据失败，请重试</div>');
-            }
-        });
-        
-        // 更新统计数据
-        updateStatistics();
-    }
-    
-    // 更新统计数据
-    function updateStatistics() {
-        var formData = $('#filter-form').serialize();
-        
-        $.get('{% url "get_statistics" %}', formData, function(data) {
+document.addEventListener('DOMContentLoaded', function() {
+  // helper to serialize form
+  function serializeForm(form) {
+    return new URLSearchParams(new FormData(form)).toString();
+  }
+
+  // 平台选择变化时加载项目列表
+  var platformEl = document.getElementById('platform');
+  var projectSelect = document.getElementById('project');
+  if (platformEl) {
+    platformEl.addEventListener('change', function() {
+      var platform = this.value;
+      if (platform) {
+        projectSelect.disabled = true;
+        projectSelect.innerHTML = '<option value="">正在加载项目列表...</option>';
+
+        fetch('{% url "get_projects_by_platform" %}?platform=' + encodeURIComponent(platform), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(resp) { return resp.json(); })
+          .then(function(data) {
             if (data.success) {
-                $('#stat-comments').text(data.statistics.total_comments);
-                $('#stat-rating').text(data.statistics.avg_rating);
-                $('#stat-likes').text(data.statistics.total_likes);
-                $('#stat-users').text(data.statistics.active_users);
+              projectSelect.innerHTML = '<option value="">全部项目</option>';
+              data.projects.forEach(function(project) {
+                var opt = document.createElement('option');
+                opt.value = project;
+                opt.textContent = project;
+                projectSelect.appendChild(opt);
+              });
             }
-        });
-    }
-    
-    // 初始化统计数据
+            projectSelect.disabled = false;
+          }).catch(function() {
+            projectSelect.disabled = false;
+            projectSelect.innerHTML = '<option value="">全部项目</option>';
+          });
+      } else {
+        projectSelect.innerHTML = '<option value="">全部项目</option>';
+      }
+    });
+  }
+
+  var filterForm = document.getElementById('filter-form');
+  var pageSizeEl = document.getElementById('page_size');
+
+  if (filterForm) {
+    filterForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      loadComments();
+    });
+  }
+
+  var resetBtn = document.getElementById('reset-filters');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function() {
+      if (filterForm) { filterForm.reset(); }
+      projectSelect.innerHTML = '<option value="">全部项目</option>';
+      loadComments();
+    });
+  }
+
+  if (pageSizeEl) {
+    pageSizeEl.addEventListener('change', function() { loadComments(); });
+  }
+
+  var exportBtn = document.getElementById('export-data');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function() {
+      var params = filterForm ? serializeForm(filterForm) : '';
+      var url = '{% url "export_data" %}?' + params + '&format=excel';
+      window.open(url, '_blank');
+    });
+  }
+
+  function loadComments() {
+    var params = filterForm ? serializeForm(filterForm) : '';
+    params += '&page_size=' + (pageSizeEl ? pageSizeEl.value : '10');
+
+    fetch('{% url "comments_list" %}?' + params, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(function(resp) {
+      if (!resp.ok) throw new Error('Network error');
+      return resp.text();
+    }).then(function(html) {
+      document.getElementById('comments-list').innerHTML = html;
+    }).catch(function() {
+      document.getElementById('comments-list').innerHTML = '<div class="alert alert-danger">加载数据失败，请重试</div>';
+    });
+
+    // 更新统计数据
     updateStatistics();
+  }
+
+  function updateStatistics() {
+    var params = filterForm ? serializeForm(filterForm) : '';
+    fetch('{% url "get_statistics" %}?' + params, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        if (data.success) {
+          var setText = function(id, text){ var el = document.getElementById(id); if(el) el.textContent = text; };
+          setText('stat-comments', data.statistics.total_comments);
+          setText('stat-rating', data.statistics.avg_rating);
+          setText('stat-likes', data.statistics.total_likes);
+          setText('stat-users', data.statistics.active_users);
+        }
+      }).catch(function(){});
+  }
+
+  // 初始化统计数据
+  updateStatistics();
 });
 </script>
 {% endblock %}

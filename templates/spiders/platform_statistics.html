@@ -1,344 +1,138 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}平台数据统计{% endblock %}
 
-{% block extra_css %}
-<style>
-:root {
-    --primary-blue: #2196f3;
-    --light-blue: #e3f2fd;
-    --dark-gray: #424242;
-    --light-gray: #f5f5f5;
-    --white: #ffffff;
-    --success: #4caf50;
-    --danger: #f94336;
-    --warning: #ff9800;
-}
-
-body {
-    background: var(--light-gray);
-    font-family: 'Microsoft YaHei', 'Arial', sans-serif;
-    color: var(--dark-gray);
-}
-
-.page-header {
-    background: var(--white);
-    border-bottom: 2px solid var(--primary-blue);
-    padding: 20px 0;
-    margin-bottom: 20px;
-}
-
-.page-title {
-    color: var(--dark-gray);
-    font-size: 1.8rem;
-    font-weight: 500;
-    margin: 0;
-    display: flex;
-    align-items: center;
-}
-
-.page-title i {
-    margin-right: 10px;
-    color: var(--primary-blue);
-}
-
-.data-card {
-    background: var(--white);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.card-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: var(--dark-gray);
-    border-bottom: 2px solid var(--light-blue);
-    padding-bottom: 8px;
-}
-
-.platform-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 25px;
-}
-
-.platform-card {
-    background: var(--white);
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border-left: 4px solid var(--primary-blue);
-}
-
-.platform-name {
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: var(--primary-blue);
-    margin-bottom: 15px;
-}
-
-.stat-overview {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.stat-item {
-    text-align: center;
-    padding: 10px;
-    background: var(--light-blue);
-    border-radius: 6px;
-}
-
-.stat-value {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--primary-blue);
-}
-
-.stat-label {
-    font-size: 0.8rem;
-    color: var(--dark-gray);
-    margin-top: 3px;
-}
-
-.monthly-table, .yearly-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    font-size: 0.9rem;
-}
-
-.monthly-table th, .monthly-table td,
-.yearly-table th, .yearly-table td {
-    padding: 8px 12px;
-    text-align: center;
-    border-bottom: 1px solid #eee;
-}
-
-.monthly-table th, .yearly-table th {
-    background: var(--light-blue);
-    font-weight: 600;
-    color: var(--dark-gray);
-}
-
-.monthly-table tr:hover, .yearly-table tr:hover {
-    background: #f9f9f9;
-}
-
-.year-badge {
-    background: var(--primary-blue);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.month-badge {
-    background: var(--success);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 0.7rem;
-}
-
-.section-divider {
-    border-top: 1px solid #ddd;
-    margin: 20px 0;
-}
-
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.summary-card {
-    background: var(--white);
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.summary-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-blue);
-    margin-bottom: 5px;
-}
-
-.summary-label {
-    color: var(--dark-gray);
-    font-size: 0.9rem;
-}
-
-@media (max-width: 768px) {
-    platform-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .stat-overview {
-        grid-template-columns: 1fr;
-    }
-    
-    .monthly-table, .yearly-table {
-        font-size: 0.8rem;
-    }
-}
-</style>
-{% endblock %}
+{% block extra_css %}{% endblock %} 
 
 {% block content %}
-<div class="container-fluid">
-    <!-- 页面头部 -->
-    <div class="page-header">
-        <div class="page-title">
-            <i class="fas fa-chart-bar"></i>
-            平台数据统计报告
-        </div>
-    </div>
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h2 class="text-xl font-semibold font-serif text-retro-heading"><i class="fas fa-chart-bar mr-2 text-primary-600"></i> 平台数据统计报告</h2>
+  </div>
 
-    <!-- 页面总体统计 -->
-    <div class="summary-grid">
-        <div class="summary-card">
-            <div class="summary-value">{{ platform_stats_detailed|length }}</div>
-            <div class="summary-label">平台总数</div>
-        </div>
-        <div class="summary-card">
-            <div class="summary-value">{{ total_all_data }}</div>
-            <div class="summary-label">数据总量</div>
-        </div>
-        <div class="summary-card">
-            <div class="summary-value">{{ current_year }}</div>
-            <div class="summary-label">统计年份</div>
-        </div>
-        <div class="summary-card">
-            <div class="summary-value">{{ current_month }}</div>
-            <div class="summary-label">当前月份</div>
-        </div>
+  <!-- 页面总体统计 -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="card-retro p-4 text-center">
+      <div class="text-2xl font-bold text-primary-600">{{ platform_stats_detailed|length }}</div>
+      <div class="text-sm text-muted mt-1">平台总数</div>
     </div>
+    <div class="card-retro p-4 text-center">
+      <div class="text-2xl font-bold text-primary-600">{{ total_all_data }}</div>
+      <div class="text-sm text-muted mt-1">数据总量</div>
+    </div>
+    <div class="card-retro p-4 text-center">
+      <div class="text-2xl font-bold text-primary-600">{{ current_year }}</div>
+      <div class="text-sm text-muted mt-1">统计年份</div>
+    </div>
+    <div class="card-retro p-4 text-center">
+      <div class="text-2xl font-bold text-primary-600">{{ current_month }}</div>
+      <div class="text-sm text-muted mt-1">当前月份</div>
+    </div>
+  </div>
 
-    {% if error %}
-    <div class="data-card">
-        <div class="card-title">错误信息</div>
-        <div style="color: var(--danger);">{{ error }}</div>
-    </div>
-    {% else %}
+  {% if error %}
+  <div class="card-retro p-4">
+    <div class="card-title font-serif text-retro-heading">错误信息</div>
+    <div class="text-red-600">{{ error }}</div>
+  </div>
+  {% else %} 
         <!-- 各平台详细统计 -->
-        <div class="platform-grid">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {% for stat in platform_stats_detailed %}
-            <div class="platform-card">
-                <div class="platform-name">{{ stat.platform }}</div>
-                
-                <!-- 总体统计 -->
-                <div class="stat-overview">
-                    <div class="stat-item">
-                        <div class="stat-value">{{ stat.total_count }}</div>
-                        <div class="stat-label">总数量</div>
+            <div class="card-retro p-4 border-l-4 border-primary-600">
+                <div class="text-lg font-semibold text-primary-600 mb-3">{{ stat.platform }}</div>
+                <div class="grid grid-cols-3 gap-3 mb-3">
+                    <div class="bg-blue-50 rounded p-3 text-center">
+                        <div class="font-bold text-primary-600">{{ stat.total_count }}</div>
+                        <div class="text-sm text-muted">总数</div>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ stat.yearly_data.2.count|default:"0" }}</div>
-                        <div class="stat-label">{{ current_year }}年</div>
+                    <div class="bg-blue-50 rounded p-3 text-center">
+                        <div class="font-bold text-primary-600">{{ stat.yearly_data.2.count|default:"0" }}</div>
+                        <div class="text-sm text-muted">{{ current_year }}年</div>
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ stat.current_year_monthly|length }}</div>
-                        <div class="stat-label">活跃月份</div>
+                    <div class="bg-blue-50 rounded p-3 text-center">
+                        <div class="font-bold text-primary-600">{{ stat.current_year_monthly|length }}</div>
+                        <div class="text-sm text-muted">活跃月份</div>
                     </div>
                 </div>
 
-                <div class="section-divider"></div>
-
-                <!-- 年度统计 -->
-                <div class="card-title">
-                    <i class="fas fa-calendar-alt"></i>
-                    年度数据对比
-                </div>
-                <table class="yearly-table">
-                    <thead>
-                        <tr>
-                            <th>年份</th>
-                            <th>数据量</th>
-                            <th>占比</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for year_data in stat.yearly_data %}
-                        <tr>
-                            <td><span class="year-badge">{{ year_data.year }}年</span></td>
-                            <td><strong>{{ year_data.count }}</strong></td>
-                            <td>
-                                {% if stat.total_count > 0 %}
-                                    {% widthratio year_data.count stat.total_count 100 %}%
-                                {% else %}
-                                    0%
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <div class="section-divider"></div>
-
-                <!-- 月度统计 -->
-                <div class="card-title">
-                    <i class="fas fa-calendar-day"></i>
-                    最近12个月趋势
-                </div>
-                <div style="max-height: 200px; overflow-y: auto;">
-                    <table class="monthly-table">
-                        <thead>
-                            <tr>
-                                <th>时间</th>
-                                <th>数据量</th>
-                            </tr>
+                <div class="border-t mt-3 pt-3">
+                    <div class="text-base font-semibold font-serif text-retro-heading mb-2">年度数据对比</div>
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full divide-y">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-3 py-2 text-left text-sm font-medium text-muted">年份</th>
+                            <th class="px-3 py-2 text-left text-sm font-medium text-muted">数据量</th>
+                            <th class="px-3 py-2 text-left text-sm font-medium text-muted">占比</th>
+                          </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="bg-white divide-y">
+                            {% for year_data in stat.yearly_data %}
+                            <tr>
+                                <td class="px-3 py-2"><span class="inline-block bg-primary-600 text-white px-2 rounded text-sm">{{ year_data.year }}年</span></td>
+                                <td class="px-3 py-2"><strong>{{ year_data.count }}</strong></td>
+                                <td class="px-3 py-2">
+                                    {% if stat.total_count > 0 %}
+                                        {% widthratio year_data.count stat.total_count 100 %}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                </div>
+
+                <div class="border-t mt-3 pt-3">
+                    <div class="text-base font-semibold font-serif text-retro-heading mb-2">最近12个月趋势</div>
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full divide-y">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-3 py-2 text-left text-sm font-medium text-muted">时间</th>
+                            <th class="px-3 py-2 text-left text-sm font-medium text-muted">数据量</th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y">
                             {% for month_data in stat.monthly_data %}
                                 {% if month_data.count > 0 %}
                                 <tr>
-                                    <td><span class="month-badge">{{ month_data.label }}</span></td>
-                                    <td><strong>{{ month_data.count }}</strong></td>
+                                    <td class="px-3 py-2"><span class="inline-block bg-success text-white px-2 rounded text-sm">{{ month_data.label }}</span></td>
+                                    <td class="px-3 py-2"><strong>{{ month_data.count }}</strong></td>
                                 </tr>
                                 {% endif %}
                             {% endfor %}
                         </tbody>
-                    </table>
+                      </table>
+                    </div>
                 </div>
 
-                <!-- 当年月度详细 -->
                 {% if stat.current_year_monthly %}
-                <div class="section-divider"></div>
-                <div class="card-title">
-                    <i class="fas fa-chart-line"></i>
-                    {{ current_year }}年月度分布
+                <div class="border-t mt-3 pt-3">
+                    <div class="text-base font-semibold font-serif text-retro-heading mb-2">{{ current_year }}年月度分布</div>
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full divide-y">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-3 py-2 text-left text-sm font-medium text-muted">月份</th>
+                            <th class="px-3 py-2 text-left text-sm font-medium text-muted">数据量</th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y">
+                            {% for month_data in stat.current_year_monthly %}
+                            <tr>
+                                <td class="px-3 py-2"><span class="inline-block bg-success text-white px-2 rounded text-sm">{{ month_data.label }}</span></td>
+                                <td class="px-3 py-2"><strong>{{ month_data.count }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
                 </div>
-                <table class="monthly-table">
-                    <thead>
-                        <tr>
-                            <th>月份</th>
-                            <th>数据量</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for month_data in stat.current_year_monthly %}
-                        <tr>
-                            <td><span class="month-badge">{{ month_data.label }}</span></td>
-                            <td><strong>{{ month_data.count }}</strong></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
                 {% endif %}
             </div>
             {% endfor %}
@@ -382,12 +176,12 @@ body {
     {% endif %}
 
     <!-- 导航按钮 -->
-    <div class="data-card">
+    <div class="data-card card-retro p-4">
         <div style="text-align: center;">
-            <a href="{% url 'sentiment_analysis' %}" class="btn btn-primary">
+            <a href="{% url 'sentiment_analysis' %}" class="btn btn-primary btn-retro">
                 <i class="fas fa-arrow-left"></i> 返回情感分析
             </a>
-            <button onclick="window.print()" class="btn btn-secondary" style="margin-left: 10px;">
+            <button onclick="window.print()" class="btn btn-retro-secondary" style="margin-left: 10px;">
                 <i class="fas fa-print"></i> 打印报告
             </button>
         </div>
@@ -397,31 +191,37 @@ body {
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // 表格排序功能（如果需要）
-    $('.monthly-table, .yearly-table').each(function() {
-        $(this).on('click', 'th', function() {
-            var table = $(this).parents('table').eq(0);
-            var rows = table.find('tr').toArray();
-            var column = $(this).prevAll().length;
-            var order = $(this).hasClass('asc') ? false : true;
-            
-            rows.sort(function(a, b) {
-                var aVal = $(a).find('td').eq(column).text();
-                var bVal = $(b).find('td').eq(column).text();
-                
-                if (!isNaN(aVal) && !isNaN(bVal)) {
-                    return order ? parseFloat(aVal) - parseFloat(bVal) : parseFloat(bVal) - parseFloat(aVal);
-                } else {
-                    return order ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                }
-            });
-            
-            table.find('tbody').empty().append(rows);
-            table.find('th').removeClass('asc desc');
-            $(this).addClass(order ? 'asc' : 'desc');
+document.addEventListener('DOMContentLoaded', function() {
+  function attachSort(table) {
+    var ths = table.querySelectorAll('th');
+    ths.forEach(function(th, idx){
+      th.addEventListener('click', function(){
+        var tbody = table.querySelector('tbody');
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+        var order = th.classList.contains('asc') ? false : true;
+
+        rows.sort(function(a,b){
+          var aVal = a.querySelectorAll('td')[idx] ? a.querySelectorAll('td')[idx].textContent.trim() : '';
+          var bVal = b.querySelectorAll('td')[idx] ? b.querySelectorAll('td')[idx].textContent.trim() : '';
+
+          var aNum = parseFloat(aVal);
+          var bNum = parseFloat(bVal);
+          if (!isNaN(aNum) && !isNaN(bNum)) {
+            return order ? aNum - bNum : bNum - aNum;
+          }
+          return order ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         });
+
+        tbody.innerHTML = '';
+        rows.forEach(function(r){ tbody.appendChild(r); });
+
+        table.querySelectorAll('th').forEach(function(x){ x.classList.remove('asc','desc'); });
+        th.classList.add(order ? 'asc' : 'desc');
+      });
     });
+  }
+
+  document.querySelectorAll('.monthly-table, .yearly-table').forEach(function(table){ attachSort(table); });
 });
 </script>
 {% endblock %}

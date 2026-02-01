@@ -1,23 +1,23 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 
 {% block title %}用户管理 - 数据管理系统{% endblock %}
 
 {% block page_title %}用户管理{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
+<div class="card-retro p-4">
+    <div class="card-title font-serif text-retro-heading d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
             <i class="fas fa-users me-2"></i>
             用户列表
         </h5>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        <button class="btn btn-primary btn-retro" data-bs-toggle="modal" data-bs-target="#addUserModal">
             <i class="fas fa-plus me-1"></i>添加用户
         </button>
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-retro">
                 <thead class="table-dark">
                     <tr>
                         <th>用户名</th>
@@ -49,38 +49,34 @@
                         <td>{{ user.email|default:"-" }}</td>
                         <td>
                             {% if user.userprofile.role == 'admin' %}
-                            <span class="badge bg-danger">管理员</span>
+                            <span class="inline-block px-2 py-1 rounded text-white bg-red-600 text-sm">管理员</span>
                             {% else %}
-                            <span class="badge bg-secondary">普通用户</span>
+                            <span class="inline-block px-2 py-1 rounded text-white bg-gray-500 text-sm">普通用户</span>
                             {% endif %}
                         </td>
-                        <td>{{ user.userprofile.department|default:"-" }}</td>
-                        <td>{{ user.userprofile.phone|default:"-" }}</td>
-                        <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
-                        <td>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                        <td class="px-4 py-2">{{ user.userprofile.department|default:"-" }}</td>
+                        <td class="px-4 py-2">{{ user.userprofile.phone|default:"-" }}</td>
+                        <td class="px-4 py-2">{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                        <td class="px-4 py-2">{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
                         <td>
                             {% if user.is_active %}
-                            <span class="badge bg-success">活跃</span>
+                            <span class="inline-block px-2 py-1 rounded text-white bg-green-500 text-sm">活跃</span>
                             {% else %}
-                            <span class="badge bg-secondary">禁用</span>
+                            <span class="inline-block px-2 py-1 rounded text-white bg-gray-500 text-sm">禁用</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-primary" onclick="editUser({{ user.id }})">
-                                    <i class="fas fa-edit"></i>
-                                </button>
+                        <td class="px-4 py-2">
+                            <div class="inline-flex items-center space-x-1">
+                                <button class="px-2 py-1 rounded border text-sm btn-retro-secondary" onclick="dispatchOpenEdit({{ user.id }})" title="编辑"><i class="fas fa-edit"></i></button>
                                 {% if user.id != request.user.id %}
-                                <button class="btn btn-outline-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <button class="px-2 py-1 rounded border text-sm text-red-600" onclick="deleteUser({{ user.id }}, '{{ user.username }}')" title="删除"><i class="fas fa-trash"></i></button>
                                 {% endif %}
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="9" class="text-center text-muted py-8">
                             <i class="fas fa-users fa-3x mb-3"></i>
                             <p>暂无用户数据</p>
                         </td>
@@ -92,221 +88,193 @@
         
         <!-- 分页 -->
         {% if page_obj.has_other_pages %}
-        <nav aria-label="分页导航">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1">首页</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
-                </li>
+        <nav aria-label="分页导航" class="mt-4 flex items-center justify-center">
+            {% if page_obj.has_previous %}
+            <a href="?page=1" class="px-3 py-1 border rounded-l">首页</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border">上一页</a>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="px-3 py-1 border bg-primary-600 text-white">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a class="px-3 py-1 border" href="?page={{ num }}">{{ num }}</a>
                 {% endif %}
-                
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ num }}</span>
-                    </li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                    </li>
-                    {% endif %}
-                {% endfor %}
-                
-                {% if page_obj.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">末页</a>
-                </li>
-                {% endif %}
-            </ul>
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border">下一页</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 border rounded-r">末页</a>
+            {% endif %}
         </nav>
         {% endif %}
     </div>
 </div>
 
-<!-- 添加用户模态框 -->
-<div class="modal fade" id="addUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">添加用户</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="addUserForm">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">用户名</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email" class="form-label">邮箱</label>
-                        <input type="email" class="form-control" id="email" name="email">
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">密码</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label">角色</label>
-                        <select class="form-select" id="role" name="role">
-                            <option value="user">普通用户</option>
-                            <option value="admin">管理员</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="department" class="form-label">部门</label>
-                        <input type="text" class="form-control" id="department" name="department">
-                    </div>
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">电话</label>
-                        <input type="text" class="form-control" id="phone" name="phone">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">添加</button>
-                </div>
-            </form>
+<!-- 添加用户模态框 (Alpine) -->
+<div x-data="{ showAdd: false }" x-on:open-add-modal.window="showAdd = true" x-on:close-add-modal.window="showAdd = false">
+  <div x-show="showAdd" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg w-full max-w-2xl p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">添加用户</h3>
+        <button @click="showAdd=false" class="text-muted">✕</button>
+      </div>
+      <form id="addUserForm" method="post" action="/accounts/create-user/">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="text-sm text-muted">用户名 <span class="text-red-500">*</span></label>
+            <input type="text" name="username" id="username" class="w-full border rounded px-2 py-2" required>
+          </div>
+          <div>
+            <label class="text-sm text-muted">邮箱</label>
+            <input type="email" name="email" id="email" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="text-sm text-muted">密码 <span class="text-red-500">*</span></label>
+            <input type="password" name="password" id="password" class="w-full border rounded px-2 py-2" required>
+          </div>
+          <div>
+            <label class="text-sm text-muted">角色</label>
+            <select name="role" id="role" class="w-full border rounded px-2 py-2">
+              <option value="user">普通用户</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm text-muted">部门</label>
+            <input type="text" name="department" id="department" class="w-full border rounded px-2 py-2">
+          </div>
+          <div>
+            <label class="text-sm text-muted">电话</label>
+            <input type="text" name="phone" id="phone" class="w-full border rounded px-2 py-2">
+          </div>
         </div>
+        <div class="mt-4 flex justify-end space-x-2">
+          <button type="button" @click="showAdd=false" class="px-3 py-2 rounded border btn-retro-secondary">取消</button>
+          <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white btn-retro">添加</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
-<!-- 编辑用户模态框 -->
-<div class="modal fade" id="editUserModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">编辑用户</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="editUserForm">
-                <input type="hidden" id="edit_user_id" name="user_id">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="edit_username" class="form-label">用户名</label>
-                        <input type="text" class="form-control" id="edit_username" name="username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_email" class="form-label">邮箱</label>
-                        <input type="email" class="form-control" id="edit_email" name="email">
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_password" class="form-label">新密码（留空不修改）</label>
-                        <input type="password" class="form-control" id="edit_password" name="password">
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_role" class="form-label">角色</label>
-                        <select class="form-select" id="edit_role" name="role">
-                            <option value="user">普通用户</option>
-                            <option value="admin">管理员</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_department" class="form-label">部门</label>
-                        <input type="text" class="form-control" id="edit_department" name="department">
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_phone" class="form-label">电话</label>
-                        <input type="text" class="form-control" id="edit_phone" name="phone">
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="edit_is_active" name="is_active">
-                            <label class="form-check-label" for="edit_is_active">
-                                用户状态（活跃）
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">保存</button>
-                </div>
-            </form>
+<!-- 编辑用户模态框 (Alpine) -->
+<div x-data="{ showEdit: false }" x-on:open-edit-modal.window="showEdit = true; if ($event.detail && $event.detail.userId) { document.getElementById('edit_user_id').value = $event.detail.userId }" x-on:close-edit-modal.window="showEdit = false">
+  <div x-show="showEdit" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg w-full max-w-2xl p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">编辑用户</h3>
+        <button @click="showEdit=false" class="text-muted">✕</button>
+      </div>
+      <form id="editUserForm" method="post">
+        {% csrf_token %}
+        <input type="hidden" id="edit_user_id" name="user_id">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="text-sm text-muted">用户名</label>
+            <input type="text" class="w-full border rounded px-2 py-2" id="edit_username" name="username" required>
+          </div>
+          <div>
+            <label class="text-sm text-muted">邮箱</label>
+            <input type="email" class="w-full border rounded px-2 py-2" id="edit_email" name="email">
+          </div>
+          <div>
+            <label class="text-sm text-muted">新密码（留空不修改）</label>
+            <input type="password" class="w-full border rounded px-2 py-2" id="edit_password" name="password">
+          </div>
+          <div>
+            <label class="text-sm text-muted">角色</label>
+            <select id="edit_role" name="role" class="w-full border rounded px-2 py-2">
+              <option value="user">普通用户</option>
+              <option value="admin">管理员</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-sm text-muted">部门</label>
+            <input type="text" class="w-full border rounded px-2 py-2" id="edit_department" name="department">
+          </div>
+          <div>
+            <label class="text-sm text-muted">电话</label>
+            <input type="text" class="w-full border rounded px-2 py-2" id="edit_phone" name="phone">
+          </div>
+          <div class="flex items-center space-x-2">
+            <label class="inline-flex items-center"><input type="checkbox" id="edit_is_active" name="is_active" class="mr-2"> 用户状态（活跃）</label>
+          </div>
         </div>
+        <div class="mt-4 flex justify-end space-x-2">
+          <button type="button" @click="showEdit=false" class="px-3 py-2 rounded border btn-retro-secondary">取消</button>
+          <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white btn-retro">保存</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// 添加用户
-$('#addUserForm').submit(function(e) {
-    e.preventDefault();
-    
-    $.ajax({
-        url: '/accounts/create-user/',
-        type: 'POST',
-        data: $(this).serialize(),
-        success: function(data) {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('添加失败：' + data.message);
-            }
-        },
-        error: function() {
-            alert('添加失败，请重试');
-        }
-    });
-});
-
-// 编辑用户
-function editUser(userId) {
-    // 这里应该通过AJAX获取用户信息
-    // 简化处理，直接显示模态框
-    $('#edit_user_id').val(userId);
-    $('#editUserModal').modal('show');
+function getCSRF(){
+    var el = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (el) return el.value;
+    var m = document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/);
+    return m ? m.pop() : '';
 }
 
-$('#editUserForm').submit(function(e) {
-    e.preventDefault();
-    
-    var userId = $('#edit_user_id').val();
-    
-    $.ajax({
-        url: '/accounts/edit-user/' + userId + '/',
-        type: 'POST',
-        data: $(this).serialize(),
-        success: function(data) {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('保存失败：' + data.message);
-            }
-        },
-        error: function() {
-            alert('保存失败，请重试');
-        }
+// 添加用户
+var addUserForm = document.getElementById('addUserForm');
+if (addUserForm) {
+    addUserForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        var params = new URLSearchParams(new FormData(addUserForm));
+        fetch('/accounts/create-user/', {
+            method: 'POST',
+            body: params,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(function(resp){ return resp.json(); })
+          .then(function(data){ if (data.success) location.reload(); else alert('添加失败：' + data.message); })
+          .catch(function(){ alert('添加失败，请重试'); });
     });
-});
+}
+
+// 编辑用户（改为 dispatch 事件以兼容 Alpine modal）
+function dispatchOpenEdit(userId) {
+    var el = document.getElementById('edit_user_id'); if (el) el.value = userId;
+    window.dispatchEvent(new CustomEvent('open-edit-modal', { detail: { userId: userId } }));
+}
+function editUser(userId) { dispatchOpenEdit(userId); }
+
+var editUserForm = document.getElementById('editUserForm');
+if (editUserForm) {
+    editUserForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        var userId = document.getElementById('edit_user_id').value;
+        var params = new URLSearchParams(new FormData(editUserForm));
+        fetch('/accounts/edit-user/' + userId + '/', {
+            method: 'POST',
+            body: params,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(function(resp){ return resp.json(); })
+          .then(function(data){ if (data.success) location.reload(); else alert('保存失败：' + data.message); })
+          .catch(function(){ alert('保存失败，请重试'); });
+    });
+}
 
 // 删除用户
 function deleteUser(userId, username) {
-    if (confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) {
-        $.ajax({
-            url: '/accounts/delete-user/' + userId + '/',
-            type: 'POST',
-            data: {
-                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
-            },
-            success: function(data) {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert('删除失败：' + data.message);
-                }
-            },
-            error: function() {
-                alert('删除失败，请重试');
-            }
-        });
-    }
+    if (!confirm('确定要删除用户 "' + username + '" 吗？此操作不可恢复！')) return;
+    var params = new URLSearchParams();
+    params.append('csrfmiddlewaretoken', getCSRF());
+    fetch('/accounts/delete-user/' + userId + '/', {
+        method: 'POST',
+        body: params,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    }).then(function(resp){ return resp.json(); })
+      .then(function(data){ if (data.success) location.reload(); else alert('删除失败：' + data.message); })
+      .catch(function(){ alert('删除失败，请重试'); });
 }
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 {% load spider_tags %}
 
@@ -216,17 +216,17 @@ body {
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- 简洁页面头部 -->
     <div class="page-header">
-        <div class="page-title">
+        <div class="page-title font-serif text-retro-heading">
             <i class="fas fa-chart-line"></i>
             情感数据分析
         </div>
     </div>
 
     <!-- 简化的筛选区域 -->
-    <div class="filter-section">
+    <div class="filter-section card-retro">
         <div class="filter-row">
             <div class="form-group">
                 <label>平台</label>
@@ -254,13 +254,13 @@ body {
             </div>
             
             <div class="form-group">
-                <button type="button" class="btn-primary" onclick="loadTrendData()">
+                <button type="button" class="btn-retro" onclick="loadTrendData()">
                     <i class="fas fa-search"></i> 分析
                 </button>
             </div>
             
             <div class="form-group">
-                <a href="/platform-statistics/" class="btn-primary" style="text-decoration: none; color: inherit;">
+                <a href="/platform-statistics/" class="btn-retro" style="text-decoration: none; color: inherit;">
                     <i class="fas fa-chart-bar"></i> 平台统计
                 </a>
             </div>
@@ -269,7 +269,7 @@ body {
 
     <!-- KPI指标卡片 -->
     <div class="kpi-grid">
-        <div class="kpi-item">
+        <div class="kpi-item card-retro p-4">
             <div class="kpi-value">{{ total_sentiments|floatformat:0 }}</div>
             <div class="kpi-label">总数据量</div>
         </div>
@@ -288,8 +288,8 @@ body {
     </div>
 
     <!-- 主要趋势图表 -->
-    <div class="chart-container">
-        <div class="chart-title">
+    <div class="chart-container card-retro p-4">
+        <div class="chart-title font-serif text-retro-heading">
             <i class="fas fa-chart-line"></i>
             情感趋势分析
         </div>
@@ -297,8 +297,8 @@ body {
     </div>
 
     <!-- 平台项目趋势分析 -->
-    <div class="chart-container">
-        <div class="chart-title">
+    <div class="chart-container card-retro p-4">
+        <div class="chart-title font-serif text-retro-heading">
             <i class="fas fa-chart-bar"></i>
             平台项目趋势分析
         </div>
@@ -393,25 +393,20 @@ let trendChart = null;
 let platformTrendChart = null;
 let projectTrendChart = null;
 
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
     // 初始化图表
     initTrendChart();
     initPlatformTrendChart();
     initProjectTrendChart();
-    
-    // 平台选择变化
-    $('#platform').change(function() {
-        loadProjects();
-    });
-    
-    // 分析类型变化
-    $('#analysis_type').change(function() {
-        loadTrendData();
-        loadPlatformProjectTrends();
-    });
-    
+
+    var platformEl = document.getElementById('platform');
+    if (platformEl) platformEl.addEventListener('change', loadProjects);
+
+    var analysisEl = document.getElementById('analysis_type');
+    if (analysisEl) analysisEl.addEventListener('change', function(){ loadTrendData(); loadPlatformProjectTrends(); });
+
     // 初始加载
-    $('#platform').trigger('change');
+    if (platformEl) platformEl.dispatchEvent(new Event('change'));
     loadTrendData();
     loadPlatformProjectTrends();
 });
@@ -486,28 +481,20 @@ function initTrendChart() {
 }
 
 function loadTrendData() {
-    const platform = $('#platform').val();
-    const project = $('#project').val();
-    const analysisType = $('#analysis_type').val();
-    
+    const platform = document.getElementById('platform') ? document.getElementById('platform').value : '';
+    const project = document.getElementById('project') ? document.getElementById('project').value : '';
+    const analysisType = document.getElementById('analysis_type') ? document.getElementById('analysis_type').value : '';
+
     // 显示加载状态
     showLoading();
-    
-    $.get('/get-monthly-trend-data/', {
-        platform: platform,
-        project: project,
-        analysis_type: analysisType
-    }).done(function(response) {
-        if (response.success) {
-            updateChart(response.monthly_data);
-        } else {
-            showError('数据加载失败');
-        }
-    }).fail(function() {
-        showError('网络请求失败');
-    }).always(function() {
-        hideLoading();
-    });
+
+    fetch('/get-monthly-trend-data/?' + new URLSearchParams({ platform: platform, project: project, analysis_type: analysisType }), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(resp){ if (!resp.ok) throw new Error('Network error'); return resp.json(); })
+      .then(function(response){
+          if (response.success) updateChart(response.monthly_data);
+          else showError('数据加载失败');
+      }).catch(function(){ showError('网络请求失败'); })
+      .finally(function(){ hideLoading(); });
 }
 
 function updateChart(data) {
@@ -527,31 +514,29 @@ function updateChart(data) {
 }
 
 function loadProjects() {
-    const platform = $('#platform').val();
-    const projectSelect = $('#project');
-    
+    var platform = document.getElementById('platform') ? document.getElementById('platform').value : '';
+    var projectSelect = document.getElementById('project');
+    if (!projectSelect) return;
+
     if (platform) {
-        projectSelect.html('<option value="">加载中...</option>');
-        
-        $.get('/get-projects-by-platform/', {platform: platform})
-            .done(function(data) {
-                if (data.success) {
-                    projectSelect.html('<option value="">全部项目</option>');
-                    data.projects.forEach(function(project) {
-                        projectSelect.append('<option value="' + project + '">' + project + '</option>');
-                    });
-                } else {
-                    projectSelect.html('<option value="">加载失败</option>');
-                }
-            });
+        projectSelect.innerHTML = '<option value="">加载中...</option>';
+
+        fetch('/get-projects-by-platform/?platform=' + encodeURIComponent(platform), { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+          .then(function(resp){ return resp.json(); })
+          .then(function(data){
+            if (data.success) {
+              projectSelect.innerHTML = '<option value="">全部项目</option>';
+              data.projects.forEach(function(project){ var opt = document.createElement('option'); opt.value = project; opt.textContent = project; projectSelect.appendChild(opt); });
+            } else { projectSelect.innerHTML = '<option value="">加载失败</option>'; }
+          }).catch(function(){ projectSelect.innerHTML = '<option value="">加载失败</option>'; });
     } else {
-        projectSelect.html('<option value="">全部项目</option>');
+        projectSelect.innerHTML = '<option value="">全部项目</option>';
     }
 }
 
 function showLoading() {
     // 简单的加载提示
-    $('.kpi-value').html('<i class="fas fa-spinner fa-spin"></i>');
+    document.querySelectorAll('.kpi-value').forEach(function(el){ el.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; });
 }
 
 function hideLoading() {
@@ -653,23 +638,14 @@ function initProjectTrendChart() {
 }
 
 function loadPlatformProjectTrends() {
-    const platform = $('#platform').val();
-    const project = $('#project').val();
-    const analysisType = $('#analysis_type').val();
-    
-    $.get('/get-platform-project-trends/', {
-        platform: platform,
-        project: project,
-        analysis_type: analysisType
-    }).done(function(response) {
-        if (response.success) {
-            updatePlatformProjectCharts(response);
-        } else {
-            showError('平台项目趋势数据加载失败: ' + (response.error || '未知错误'));
-        }
-    }).fail(function() {
-        showError('网络请求失败');
-    });
+    const platform = document.getElementById('platform') ? document.getElementById('platform').value : '';
+    const project = document.getElementById('project') ? document.getElementById('project').value : '';
+    const analysisType = document.getElementById('analysis_type') ? document.getElementById('analysis_type').value : '';
+
+    fetch('/get-platform-project-trends/?' + new URLSearchParams({ platform: platform, project: project, analysis_type: analysisType }), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(resp){ if (!resp.ok) throw new Error('Network error'); return resp.json(); })
+      .then(function(response){ if (response.success) updatePlatformProjectCharts(response); else showError('平台项目趋势数据加载失败: ' + (response.error || '未知错误')); })
+      .catch(function(){ showError('网络请求失败'); });
 }
 
 function updatePlatformProjectCharts(data) {

@@ -1,77 +1,48 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}用户权限管理{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-user-shield me-2"></i>
-                        用户权限管理中心
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>用户</th>
-                                    <th>权限级别</th>
-                                    <th>高级分析权限</th>
-                                    <th>导出权限</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for profile in page_obj %}
-                                <tr>
-                                    <td>{{ profile.user.username }}</td>
-                                    <td>
-                                        <span class="badge bg-info">{{ profile.permission_level }}</span>
-                                    </td>
-                                    <td>
-                                        {% if profile.can_view_advanced_sentiment %}
-                                        <span class="badge bg-success">是</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">否</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if profile.can_export_data %}
-                                        <span class="badge bg-success">是</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">否</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="/edit-permission/{{ profile.user.id }}/" class="btn btn-sm btn-outline-primary">
-                                            编辑
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="5" class="text-center">没有权限数据</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <div class="text-center mt-4">
-                        <a href="/sentiment-analysis/" class="btn btn-success">
-                            <i class="fas fa-brain me-2"></i>
-                            返回情感分析
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h4 class="text-lg font-semibold font-serif text-retro-heading"><i class="fas fa-user-shield mr-2 text-primary-600"></i> 用户权限管理中心</h4>
+  </div>
+
+  <div class="card-retro p-4">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y table-retro">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">用户</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">权限级别</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">高级分析权限</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">导出权限</th>
+            <th class="px-4 py-2 text-left text-sm font-medium text-muted">操作</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y">
+          {% for profile in page_obj %}
+          <tr>
+            <td class="px-4 py-2">{{ profile.user.username }}</td>
+            <td class="px-4 py-2"><span class="inline-block px-2 py-1 rounded bg-blue-100 text-blue-800 text-sm">{{ profile.permission_level }}</span></td>
+            <td class="px-4 py-2">{% if profile.can_view_advanced_sentiment %}<span class="inline-block px-2 py-1 rounded bg-green-500 text-white text-sm">是</span>{% else %}<span class="inline-block px-2 py-1 rounded bg-gray-400 text-white text-sm">否</span>{% endif %}</td>
+            <td class="px-4 py-2">{% if profile.can_export_data %}<span class="inline-block px-2 py-1 rounded bg-green-500 text-white text-sm">是</span>{% else %}<span class="inline-block px-2 py-1 rounded bg-gray-400 text-white text-sm">否</span>{% endif %}</td>
+            <td class="px-4 py-2"><a href="/edit-permission/{{ profile.user.id }}/" class="px-3 py-1 rounded border btn-retro-secondary text-sm">编辑</a></td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center py-8 text-muted">没有权限数据</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+
+    <div class="text-center mt-4">
+      <a href="/sentiment-analysis/" class="px-4 py-2 rounded bg-primary-600 text-white btn-retro"> <i class="fas fa-brain mr-2"></i> 返回情感分析</a>
+    </div>
+  </div>
 </div>
 {% endblock %}
 

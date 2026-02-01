@@ -1,90 +1,69 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}编辑评论{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">
-                        <i class="fas fa-edit me-2"></i>编辑评论
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" id="editForm">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">用户名 <span class="text-danger">*</span></label>
-                                    <input type="text" name="user_name" class="form-control" value="{{ comment.user_name }}" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">评论数量</label>
-                                    <input type="number" name="comment_num" class="form-control" value="{{ comment.comment_num }}" min="0">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">评分 <span class="text-danger">*</span></label>
-                                    <select name="comment_grade" class="form-select" required>
-                                        <option value="">请选择评分</option>
-                                        <option value="1" {% if comment.comment_grade == "1" %}selected{% endif %}>1星</option>
-                                        <option value="2" {% if comment.comment_grade == "2" %}selected{% endif %}>2星</option>
-                                        <option value="3" {% if comment.comment_grade == "3" %}selected{% endif %}>3星</option>
-                                        <option value="4" {% if comment.comment_grade == "4" %}selected{% endif %}>4星</option>
-                                        <option value="5" {% if comment.comment_grade == "5" %}selected{% endif %}>5星</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">项目 <span class="text-danger">*</span></label>
-                            <select name="poi_id" class="form-select" required>
-                                <option value="">请选择项目</option>
-                                {% for project in projects %}
-                                <option value="{{ project.poid }}" {% if project.poid == comment.poiId %}selected{% endif %}>
-                                    {{ project.IteamName }} ({{ project.SalesChannel }})
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">评论内容 <span class="text-danger">*</span></label>
-                            <textarea name="comment_content" class="form-control" rows="4" required>{{ comment.comment_content }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label class="form-label">发布时间</label>
-                                    <input type="text" class="form-control" value="{{ comment.release_time|date:'Y-m-d H:i:s' }}" readonly>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">创建时间</label>
-                                    <input type="text" class="form-control" value="{{ comment.create_time|date:'Y-m-d H:i:s' }}" readonly>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-1"></i>保存
-                            </button>
-                            <a href="{% url 'data_management' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left me-1"></i>返回
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+<div class="max-w-4xl mx-auto py-6">
+  <div class="card-retro p-4">
+    <div class="mb-4">
+      <h4 class="text-lg font-semibold font-serif text-retro-heading"><i class="fas fa-edit mr-2"></i> 编辑评论</h4>
     </div>
+    <form method="POST" id="editForm">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-sm text-muted">用户名 <span class="text-red-500">*</span></label>
+          <input type="text" name="user_name" class="w-full border rounded px-2 py-2" value="{{ comment.user_name }}" required>
+        </div>
+        <div>
+          <label class="text-sm text-muted">评论数量</label>
+          <input type="number" name="comment_num" class="w-full border rounded px-2 py-2" value="{{ comment.comment_num }}" min="0">
+        </div>
+        <div>
+          <label class="text-sm text-muted">评分 <span class="text-red-500">*</span></label>
+          <select name="comment_grade" class="w-full border rounded px-2 py-2" required>
+            <option value="">请选择评分</option>
+            <option value="1" {% if comment.comment_grade == "1" %}selected{% endif %}>1星</option>
+            <option value="2" {% if comment.comment_grade == "2" %}selected{% endif %}>2星</option>
+            <option value="3" {% if comment.comment_grade == "3" %}selected{% endif %}>3星</option>
+            <option value="4" {% if comment.comment_grade == "4" %}selected{% endif %}>4星</option>
+            <option value="5" {% if comment.comment_grade == "5" %}selected{% endif %}>5星</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-muted">项目 <span class="text-red-500">*</span></label>
+          <select name="poi_id" class="w-full border rounded px-2 py-2" required>
+            <option value="">请选择项目</option>
+            {% for project in projects %}
+            <option value="{{ project.poid }}" {% if project.poid == comment.poiId %}selected{% endif %}>{{ project.IteamName }} ({{ project.SalesChannel }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="text-sm text-muted">评论内容 <span class="text-red-500">*</span></label>
+        <textarea name="comment_content" class="w-full border rounded px-2 py-2" rows="4" required>{{ comment.comment_content }}</textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="text-sm text-muted">发布时间</label>
+          <input type="text" class="w-full border rounded px-2 py-2" value="{{ comment.release_time|date:'Y-m-d H:i:s' }}" readonly>
+        </div>
+        <div>
+          <label class="text-sm text-muted">创建时间</label>
+          <input type="text" class="w-full border rounded px-2 py-2" value="{{ comment.create_time|date:'Y-m-d H:i:s' }}" readonly>
+        </div>
+      </div>
+
+      <div class="mt-4 flex items-center space-x-2">
+        <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white btn-retro"><i class="fas fa-save mr-1"></i>保存</button>
+        <a href="{% url 'data_management' %}" class="px-3 py-2 rounded border btn-retro-secondary"> <i class="fas fa-arrow-left mr-1"></i> 返回</a>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>

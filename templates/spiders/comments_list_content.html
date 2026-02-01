@@ -41,8 +41,7 @@
                     <div style="max-width: 200px; overflow: hidden;">
                         {% if comment.comment_content|length > 50 %}
                         <span class="comment-preview">{{ comment.comment_content|truncatechars:50 }}</span>
-                        <button class="btn btn-sm btn-outline-primary ms-1" onclick="showFullContent(this)" 
-                                style="padding: 2px 6px; font-size: 12px;">
+                        <button class="btn btn-retro-secondary btn-sm ms-1" onclick="showFullContent(this)" style="padding: 2px 6px; font-size: 12px;">
                             <i class="fas fa-expand-alt"></i>
                         </button>
                         {% else %}
@@ -65,7 +64,7 @@
                     <small class="text-muted">{{ comment.comment_id|truncatechars:15 }}</small>
                 </td>
                 <td>
-                    <a href="{% url 'edit_comment' comment.comment_id %}" class="btn btn-sm btn-primary">
+                    <a href="{% url 'edit_comment' comment.comment_id %}" class="btn btn-retro-secondary btn-sm">
                         <i class="fas fa-edit"></i> 编辑
                     </a>
                 </td>
@@ -133,9 +132,9 @@
 <!-- 评论内容展开模态框 -->
 <div class="modal fade" id="contentModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+        <div class="modal-content card-retro">
             <div class="modal-header">
-                <h5 class="modal-title">完整评论内容</h5>
+                <h5 class="modal-title font-serif text-retro-heading">完整评论内容</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">

@@ -162,6 +162,15 @@ server {
     location /media/ {
         alias /opt/spider_management_system/media/;
     }
+
+    # 注意：确保 Nginx 返回正确的 MIME 类型（CSS 文件应为 `text/css`）。
+    # 如果浏览器控制台显示类似 “Refused to apply style ... MIME type ('text/html') is not a supported stylesheet MIME type”，
+    # 请检查：
+    #  - 静态路径是否指向正确目录（`/opt/spider_management_system/static/`）并且文件存在
+    #  - 运行 `python3 manage.py collectstatic`（生产环境）
+    #  - Nginx 已启用默认的 mime.types（通常在 nginx.conf 中包含）
+    #  - 可考虑使用 WhiteNoise 在 Django 层供给静态文件并自动设置正确的 Content-Type
+    # 例：`curl -I http://your_domain/static/css/retro.css` 应返回 `Content-Type: text/css`
 }
 ```
 

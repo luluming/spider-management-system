@@ -51,17 +51,17 @@
                 </td>
                 <td>
                     <div class="btn-group" role="group">
-                        <button class="btn btn-sm btn-outline-info" onclick="viewUser({{ user.id }})" title="查看">
+                        <button class="btn btn-retro-secondary btn-sm" onclick="viewUser({{ user.id }})" title="查看">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-warning" onclick="editUser({{ user.id }})" title="编辑">
+                        <button class="btn btn-retro-secondary btn-sm" onclick="editUser({{ user.id }})" title="编辑">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="managePermissions({{ user.id }})" title="权限管理">
+                        <button class="btn btn-retro-secondary btn-sm" onclick="managePermissions({{ user.id }})" title="权限管理">
                             <i class="fas fa-key"></i>
                         </button>
                         {% if user.id != request.user.id %}
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser({{ user.id }})" title="删除">
+                        <button class="btn btn-retro-secondary btn-sm" onclick="deleteUser({{ user.id }})" title="删除">
                             <i class="fas fa-trash"></i>
                         </button>
                         {% endif %}

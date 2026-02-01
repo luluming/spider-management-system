@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}用户权限管理{% endblock %}
@@ -41,149 +41,100 @@
 <div class="main-content">
     <div class="container-fluid py-4">
         <!-- 页面头部 -->
-        <div class="permission-card">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
-                    <h1 class="mb-2">
-                        <i class="fas fa-user-shield me-3"></i>
-                        用户权限管理中心
-                    </h1>
-                    <p class="mb-0 opacity-90">管理用户访问权限，控制功能模块的访问范围</p>
+        <div class="bg-gradient-to-r from-primary-600 to-purple-700 text-white rounded-lg p-6 mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-semibold mb-1"><i class="fas fa-user-shield mr-3"></i> 用户权限管理中心</h1>
+                    <p class="opacity-90">管理用户访问权限，控制功能模块的访问范围</p>
                 </div>
-                <div class="col-lg-4 text-end">
-                    <div class="d-inline-flex align-items-center bg-white bg-opacity-20 px-3 py-2 rounded-pill">
-                        <i class="fas fa-users-cog me-2"></i>
-                        <span>权限管理员</span>
-                    </div>
+                <div class="inline-flex items-center bg-white bg-opacity-20 px-3 py-2 rounded-full">
+                    <i class="fas fa-users-cog mr-2"></i>
+                    <span>权限管理员</span>
                 </div>
             </div>
         </div>
 
         <!-- 功能导航 -->
-        <div class="row mb-4">
-            <div class="col-md-3 mb-3">
-                <a href="{% url 'permission_management' %}" class="btn btn-primary w-100 py-3">
-                    <i class="fas fa-list fa-2x mb-2"></i>
-                    <div class="fw-bold">权限列表</div>
-                    <small>查看所有用户权限</small>
-                </a>
-            </div>
-            <div class="col-md-3 mb-3">
-                <a href="{% url 'permission_access_log' %}" class="btn btn-info w-100 py-3">
-                    <i class="fas fa-history fa-2x mb-2"></i>
-                    <div class="fw-bold">访问日志</div>
-                    <small>查看功能访问记录</small>
-                </a>
-            </div>
-            <div class="col-md-3 mb-3">
-                <a href="{% url 'permission_stats' %}" class="btn btn-success w-100 py-3">
-                    <i class="fas fa-chart-bar fa-2x mb-2"></i>
-                    <div class="fw-bold">统计报告</div>
-                    <small>权限使用统计</small>
-                </a>
-            </div>
-            <div class="col-md-3 mb-3">
-                <a href="{% url 'sentiment_analysis' %}" class="btn btn-secondary w-100 py-3">
-                    <i class="fas fa-brain fa-2x mb-2"></i>
-                    <div class="fw-bold">情感分析</div>
-                    <small>访问分析功能</small>
-                </a>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <a href="{% url 'permission_management' %}" class="block px-4 py-6 rounded-lg bg-primary-600 text-white text-center btn-retro">
+                <i class="fas fa-list fa-2x mb-2"></i>
+                <div class="font-semibold">权限列表</div>
+                <small>查看所有用户权限</small>
+            </a>
+            <a href="{% url 'permission_access_log' %}" class="block px-4 py-6 rounded-lg bg-blue-500 text-white text-center">
+                <i class="fas fa-history fa-2x mb-2"></i>
+                <div class="font-semibold">访问日志</div>
+                <small>查看功能访问记录</small>
+            </a>
+            <a href="{% url 'permission_stats' %}" class="block px-4 py-6 rounded-lg bg-green-500 text-white text-center">
+                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                <div class="font-semibold">统计报告</div>
+                <small>权限使用统计</small>
+            </a>
+            <a href="{% url 'sentiment_analysis' %}" class="block px-4 py-6 rounded-lg bg-gray-200 text-center">
+                <i class="fas fa-brain fa-2x mb-2"></i>
+                <div class="font-semibold">情感分析</div>
+                <small>访问分析功能</small>
+            </a>
         </div>
 
         <!-- 用户权限表格 -->
-        <div class="permission-table">
-            <div class="p-4 border-bottom">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h4 class="mb-0">
-                            <i class="fas fa-users fa-sm me-2 text-primary"></i>
-                            用户权限配置
-                        </h4>
-                    </div>
-                    <div class="col-md-6">
-                        <form method="get" class="d-flex gap-2">
-                            <select name="level" class="form-select">
-                                <option value="">全部级别</option>
-                                <option value="basic">基础用户</option>
-                                <option value="analyst">分析师</option>
-                                <option value="senior_analyst">高级分析师</option>
-                                <option value="admin">管理员</option>
-                            </option>
-                            <button type="submit" class="btn btn-outline-primary">
-                                <i class="fas fa-filter"></i>
-                            </button>
-                        </form>
-                    </div>
-                </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-semibold"><i class="fas fa-users text-primary mr-2"></i> 用户权限配置</h4>
+                <form method="get" class="flex gap-2">
+                    <select name="level" class="border rounded px-2 py-1">
+                        <option value="">全部级别</option>
+                        <option value="basic">基础用户</option>
+                        <option value="analyst">分析师</option>
+                        <option value="senior_analyst">高级分析师</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                    <button type="submit" class="px-3 py-1 border rounded"><i class="fas fa-filter"></i></button>
+                </form>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-primary">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y table-retro">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <th>用户名</th>
-                            <th>权限级别</th>
-                            <th>基础分析</th>
-                            <th>高级分析</th>
-                            <th>数据导出</th>
-                            <th>用户管理</th>
-                            <th>操作</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-muted">用户名</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-muted">权限级别</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-muted">基础分析</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-muted">高级分析</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-muted">数据导出</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-muted">用户管理</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-muted">操作</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="bg-white divide-y">
                         {% for profile in page_obj %}
                         <tr>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
-                                        <i class="fas fa-user text-white"></i>
-                                    </div>
+                            <td class="px-4 py-2">
+                                <div class="flex items-center">
+                                    <div class="bg-primary-600 rounded-full flex items-center justify-center mr-3 w-10 h-10"><i class="fas fa-user text-white"></i></div>
                                     <div>
-                                        <div class="fw-bold">{{ profile.user.username }}</div>
+                                        <div class="font-semibold">{{ profile.user.username }}</div>
                                         <small class="text-muted">{{ profile.user.email|default:"未设置邮箱" }}</small>
                                     </div>
                                 </div>
                             </td>
-                            <td>
-                                <span class="permission-badge level-{{ profile.permission_level }}">
-                                    {% if profile.permission_level == 'basic' %}基础用户
-                                    {% elif profile.permission_level == 'analyst' %}分析师
-                                    {% elif profile.permission_level == 'senior_analyst' %}高级分析师
-                                    {% elif profile.permission_level == 'admin' %}管理员
-                                    {% else %}{{ profile.permission_level }}
-                                    {% endif %}
-                                </span>
+                            <td class="px-4 py-2">
+                                {% if profile.permission_level == 'basic' %}<span class="inline-block px-2 py-1 rounded bg-gray-500 text-white text-sm">基础用户</span>
+                                {% elif profile.permission_level == 'analyst' %}<span class="inline-block px-2 py-1 rounded bg-blue-600 text-white text-sm">分析师</span>
+                                {% elif profile.permission_level == 'senior_analyst' %}<span class="inline-block px-2 py-1 rounded bg-green-600 text-white text-sm">高级分析师</span>
+                                {% elif profile.permission_level == 'admin' %}<span class="inline-block px-2 py-1 rounded bg-red-600 text-white text-sm">管理员</span>
+                                {% else %}<span class="inline-block px-2 py-1 rounded bg-gray-200 text-sm">{{ profile.permission_level }}</span>{% endif %}
                             </td>
-                            <td>
-                                <span class="badge bg-{% if profile.can_view_basic_sentiment %}success{% else %}secondary{% endif %}">
-                                    <i class="fas fa-{% if profile.can_view_basic_sentiment %}check{% else %}times{% endif %}"></i>
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{% if profile.can_view_advanced_sentiment %}success{% else %}secondary{% endif %}">
-                                    <i class="fas fa-{% if profile.can_view_advanced_sentiment %}check{% else %}times{% endif %}"></i>
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{% if profile.can_export_data %}success{% else %}secondary{% endif %}">
-                                    <i class="fas fa-{% if profile.can_export_data %}check{% else %}times{% endif %}"></i>
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-{% if profile.can_manage_users %}success{% else %}secondary{% endif %}">
-                                    <i class="fas fa-{% if profile.can_manage_users %}check{% else %}times{% endif %}"></i>
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{% url 'edit_user_permission' profile.user.id %}" class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-edit me-1 small"></i>编辑
-                                </a>
-                            </td>
+                            <td class="px-4 py-2"><span class="inline-block text-sm">{% if profile.can_view_basic_sentiment %}<i class="fas fa-check text-green-500"></i>{% else %}<i class="fas fa-times text-gray-400"></i>{% endif %}</span></td>
+                            <td class="px-4 py-2"><span class="inline-block text-sm">{% if profile.can_view_advanced_sentiment %}<i class="fas fa-check text-green-500"></i>{% else %}<i class="fas fa-times text-gray-400"></i>{% endif %}</span></td>
+                            <td class="px-4 py-2"><span class="inline-block text-sm">{% if profile.can_export_data %}<i class="fas fa-check text-green-500"></i>{% else %}<i class="fas fa-times text-gray-400"></i>{% endif %}</span></td>
+                            <td class="px-4 py-2"><span class="inline-block text-sm">{% if profile.can_manage_users %}<i class="fas fa-check text-green-500"></i>{% else %}<i class="fas fa-times text-gray-400"></i>{% endif %}</span></td>
+                            <td class="px-4 py-2"><a href="{% url 'edit_user_permission' profile.user.id %}" class="px-3 py-1 rounded border text-sm">编辑</a></td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center py-5">
+                            <td colspan="7" class="text-center py-8">
                                 <i class="fas fa-users fa-3x text-muted mb-3"></i>
                                 <p class="text-muted">没有找到用户权限配置</p>
                             </td>
@@ -192,7 +143,6 @@
                     </tbody>
                 </table>
             </div>
-
             <!-- 分页 -->
             {% if page_obj.has_other_pages %}
             <div class="p-4 border-top">
@@ -234,37 +184,15 @@
         </div>
 
         <!-- 快速操作面板 -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">
-                            <i class="fas fa-cogs me-2"></i>
-                            快速操作面板
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <button class="btn btn-outline-success w-100" onclick="bulkUpdate('promote_to_analyst')">
-                                    <i class="fas fa-arrow-up me-2"></i>
-                                    批量提升为分析师
-                                </button>
-                            </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-outline-warning w-100" onclick="bulkUpdate('restrict_to_basic')">
-                                    <i class="fas fa-arrow-down me-2"></i>
-                                    批量降为基础用户
-                                </button>
-                            </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-outline-info w-100" onclick="refreshPermissions()">
-                                    <i class="fas fa-sync me-2"></i>
-                                    刷新权限缓存
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+        <div class="mt-4">
+            <div class="card-retro p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h5 class="font-serif text-retro-heading"><i class="fas fa-cogs mr-2"></i> 快速操作面板</h5>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <button class="px-4 py-3 rounded bg-primary-600 text-white" onclick="bulkUpdate('promote_to_analyst')"><i class="fas fa-arrow-up mr-2"></i> 批量提升为分析师</button>
+                    <button class="px-4 py-3 rounded border" onclick="bulkUpdate('restrict_to_basic')"><i class="fas fa-arrow-down mr-2"></i> 批量降为基础用户</button>
+                    <button class="px-4 py-3 rounded border" onclick="refreshPermissions()"><i class="fas fa-sync mr-2"></i> 刷新权限缓存</button>
                 </div>
             </div>
         </div>
@@ -274,40 +202,35 @@
 
 {% block extra_js %}
 <script>
+function getCSRF(){
+    var el = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (el) return el.value;
+    var m = document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/);
+    return m ? m.pop() : '';
+}
+
 function bulkUpdate(action) {
-    if (confirm('确定要执行批量操作吗？')) {
-        $.ajax({
-            url: '{% url "bulk_permission_update" %}',
-            method: 'POST',
-            data: {
-                action: action,
-                csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
-            },
-            success: function(response) {
-                if (response.success) {
-                    alert(response.message);
-                    location.reload();
-                } else {
-                    alert('操作失败: ' + response.message);
-                }
-            },
-            error: function() {
-                alert('操作失败，请重试');
-            }
-        });
-    }
+    if (!confirm('确定要执行批量操作吗？')) return;
+    var params = new URLSearchParams();
+    params.append('action', action);
+    params.append('csrfmiddlewaretoken', getCSRF());
+
+    fetch('{% url "bulk_permission_update" %}', {
+        method: 'POST',
+        body: params,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    }).then(function(resp){ return resp.json(); })
+      .then(function(data){
+          if (data.success) { alert(data.message); location.reload(); }
+          else { alert('操作失败: ' + (data.message || '')); }
+      }).catch(function(){ alert('操作失败，请重试'); });
 }
 
 function refreshPermissions() {
-    $.ajax({
-        url: '{% url "check_user_permission" %}',
-        success: function(data) {
-            alert('权限缓存刷新完成');
-        },
-        error: function() {
-            alert('刷新失败');
-        }
-    });
+    fetch('{% url "check_user_permission" %}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(){ alert('权限缓存刷新完成'); })
+      .catch(function(){ alert('刷新失败'); });
 }
 </script>
 {% endblock %}

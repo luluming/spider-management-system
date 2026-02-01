@@ -1,303 +1,223 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}用户项目权限管理 - {{ user.username }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
-                        <i class="fas fa-key me-2"></i>用户项目权限管理 - {{ user.username }}
-                    </h4>
-                    <div>
-                        <button class="btn btn-primary" onclick="showAssignModal()">
-                            <i class="fas fa-plus me-1"></i>分配项目权限
-                        </button>
-                        <a href="{% url 'user_management' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-1"></i>返回用户管理
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <!-- 用户信息 -->
-                    <div class="row mb-4">
-                        <div class="col-md-3">
-                            <div class="card bg-light">
-                                <div class="card-body text-center">
-                                    <h6 class="card-title">用户ID</h6>
-                                    <p class="card-text">{{ user.id }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light">
-                                <div class="card-body text-center">
-                                    <h6 class="card-title">用户名</h6>
-                                    <p class="card-text">{{ user.username }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light">
-                                <div class="card-body text-center">
-                                    <h6 class="card-title">邮箱</h6>
-                                    <p class="card-text">{{ user.email }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card bg-light">
-                                <div class="card-body text-center">
-                                    <h6 class="card-title">项目权限数量</h6>
-                                    <p class="card-text">{{ permissions.count }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h4 class="text-lg font-semibold font-serif text-retro-heading"><i class="fas fa-key mr-2 text-primary-600"></i> 用户项目权限管理 - {{ user.username }}</h4>
+    <div class="flex items-center space-x-2">
+      <button class="px-3 py-2 rounded-md bg-primary-600 text-white btn-retro" onclick="$dispatch('open-assign-modal')"><i class="fas fa-plus mr-1"></i> 分配项目权限</button>
+      <a href="{% url 'user_management' %}" class="px-3 py-2 rounded-md bg-white border btn-retro-secondary"><i class="fas fa-arrow-left mr-1"></i> 返回用户管理</a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="card-soft p-3 text-center">
+      <div class="text-sm font-semibold">用户ID</div>
+      <div class="text-lg">{{ user.id }}</div>
+    </div>
+    <div class="card-soft p-3 text-center">
+      <div class="text-sm font-semibold">用户名</div>
+      <div class="text-lg">{{ user.username }}</div>
+    </div>
+    <div class="card-soft p-3 text-center">
+      <div class="text-sm font-semibold">邮箱</div>
+      <div class="text-lg">{{ user.email }}</div>
+    </div>
+    <div class="card-soft p-3 text-center">
+      <div class="text-sm font-semibold">项目权限数量</div>
+      <div class="text-lg">{{ permissions.count }}</div>
+    </div>
+  </div>
 
                     <!-- 项目权限列表 -->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>项目名称</th>
-                                    <th>平台</th>
-                                    <th>POI ID</th>
-                                    <th>授权人</th>
-                                    <th>授权时间</th>
-                                    <th>状态</th>
-                                    <th>备注</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for permission in permissions %}
-                                <tr>
-                                    <td>{{ permission.project_name }}</td>
-                                    <td>
-                                        <span class="badge bg-info">{{ permission.platform }}</span>
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">{{ permission.project_poi_id }}</small>
-                                    </td>
-                                    <td>{{ permission.granted_by.username|default:"系统" }}</td>
-                                    <td>
-                                        <small class="text-muted">{{ permission.granted_at|date:"Y-m-d H:i" }}</small>
-                                    </td>
-                                    <td>
-                                        {% if permission.is_active %}
-                                            <span class="badge bg-success">有效</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">无效</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">{{ permission.notes|default:"-" }}</small>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-danger" onclick="revokePermission({{ permission.id }})" title="撤销权限">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
-                                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                        该用户暂无项目权限
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y table-retro">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">项目名称</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">平台</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">POI ID</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">授权人</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">授权时间</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">状态</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">备注</th>
+          <th class="px-4 py-2 text-left text-sm font-medium text-muted">操作</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y">
+        {% for permission in permissions %}
+        <tr>
+          <td class="px-4 py-2">{{ permission.project_name }}</td>
+          <td class="px-4 py-2"><span class="inline-block px-2 py-1 rounded bg-blue-200 text-blue-800 text-sm">{{ permission.platform }}</span></td>
+          <td class="px-4 py-2"><small class="text-muted">{{ permission.project_poi_id }}</small></td>
+          <td class="px-4 py-2">{{ permission.granted_by.username|default:"系统" }}</td>
+          <td class="px-4 py-2"><small class="text-muted">{{ permission.granted_at|date:"Y-m-d H:i" }}</small></td>
+          <td class="px-4 py-2">{% if permission.is_active %}<span class="inline-block px-2 py-1 rounded bg-green-500 text-white text-sm">有效</span>{% else %}<span class="inline-block px-2 py-1 rounded bg-gray-400 text-white text-sm">无效</span>{% endif %}</td>
+          <td class="px-4 py-2"><small class="text-muted">{{ permission.notes|default:"-" }}</small></td>
+          <td class="px-4 py-2"><button class="px-2 py-1 rounded border text-sm text-red-600" onclick="revokePermission({{ permission.id }})" title="撤销权限"><i class="fas fa-times"></i></button></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted py-8">
+            <i class="fas fa-inbox fa-2x mb-2"></i><br>
+            该用户暂无项目权限
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 分配项目权限模态框 -->
-<div class="modal fade" id="assignModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">分配项目权限</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="assignForm">
-                <div class="modal-body">
-                    {% csrf_token %}
-                    <input type="hidden" name="user_id" value="{{ user.id }}">
-                    <div class="mb-3">
-                        <label class="form-label">选择平台 <span class="text-danger">*</span></label>
-                        <select name="platform" id="platformSelect" class="form-select" required>
-                            <option value="">请先选择平台</option>
-                            {% for platform in platforms %}
-                            <option value="{{ platform }}">{{ platform }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">选择项目 <span class="text-danger">*</span></label>
-                        <select name="project_poi_id" id="projectSelect" class="form-select" required disabled>
-                            <option value="">请先选择平台</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">备注</label>
-                        <textarea name="notes" class="form-control" rows="3" placeholder="可选的备注信息"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary">分配权限</button>
-                </div>
-            </form>
+<!-- 分配项目权限模态框 (Alpine) -->
+<div x-data="{ showAssign: false }" x-on:open-assign-modal.window="showAssign = true" x-on:close-assign-modal.window="showAssign = false">
+  <div x-show="showAssign" class="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-40">
+    <div class="bg-white rounded-lg w-full max-w-3xl p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">分配项目权限</h3>
+        <button @click="showAssign = false" class="text-muted">✕</button>
+      </div>
+      <form id="assignForm" method="post" action="/assign-project-permission/">
+        {% csrf_token %}
+        <input type="hidden" name="user_id" value="{{ user.id }}">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="text-sm text-muted">选择平台 <span class="text-red-500">*</span></label>
+            <select name="platform" id="platformSelect" class="w-full border rounded px-2 py-2" required>
+              <option value="">请先选择平台</option>
+              {% for platform in platforms %}
+              <option value="{{ platform }}">{{ platform }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label class="text-sm text-muted">选择项目 <span class="text-red-500">*</span></label>
+            <select name="project_poi_id" id="projectSelect" class="w-full border rounded px-2 py-2" required disabled>
+              <option value="">请先选择平台</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-sm text-muted">备注</label>
+            <textarea name="notes" class="w-full border rounded px-2 py-2" rows="3" placeholder="可选的备注信息"></textarea>
+          </div>
         </div>
+        <div class="mt-4 flex justify-end space-x-2">
+          <button type="button" @click="showAssign=false" class="px-3 py-2 rounded border btn-retro-secondary">取消</button>
+          <button type="submit" class="px-4 py-2 rounded bg-primary-600 text-white btn-retro">分配权限</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 
 <script>
-$(document).ready(function() {
-    console.log('页面加载完成，开始绑定事件');
-    
-    // 使用事件委托，确保模态框内的元素也能响应事件
-    $(document).on('change', '#platformSelect', function() {
-        console.log('平台选择变化事件触发');
-        var platform = $(this).val();
-        var projectSelect = $('#projectSelect');
-        
-        console.log('选择的平台:', platform);
-        console.log('项目选择框元素:', projectSelect.length);
-        
-        if (platform) {
-            // 启用项目选择框
-            projectSelect.prop('disabled', false);
-            projectSelect.html('<option value="">加载中...</option>');
-            
-            console.log('开始AJAX请求，平台:', platform);
-            
-            // 获取CSRF令牌
-            var csrfToken = $('meta[name=csrf-token]').attr('content') || $('[name=csrfmiddlewaretoken]').val();
-            console.log('CSRF令牌:', csrfToken ? '已获取' : '未获取');
-            
-            // 获取该平台下的项目
-            $.ajax({
-                url: '/get-platform-projects/',
-                type: 'GET',
-                data: { 'platform': platform },
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                xhrFields: {
-                    withCredentials: true
-                },
-                success: function(response) {
-                    console.log('AJAX成功响应:', response);
-                    if (response.success) {
-                        projectSelect.html('<option value="">请选择项目</option>');
-                        $.each(response.projects, function(index, project) {
-                            projectSelect.append('<option value="' + project.poiId + '">' + 
-                                project.title + ' - ' + project.poiId + '</option>');
-                        });
-                        console.log('项目加载完成，共', response.projects.length, '个项目');
-                    } else {
-                        console.log('API返回失败:', response.message);
-                        projectSelect.html('<option value="">加载失败</option>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.log('AJAX请求失败:', status, error);
-                    console.log('响应状态码:', xhr.status);
-                    console.log('响应内容:', xhr.responseText);
-                    projectSelect.html('<option value="">加载失败</option>');
-                }
-            });
-        } else {
-            // 禁用项目选择框
-            projectSelect.prop('disabled', true);
-            projectSelect.html('<option value="">请先选择平台</option>');
-        }
-    });
-    
-    // 分配权限表单提交
-    $('#assignForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        $.ajax({
-            url: '/assign-project-permission/',
-            type: 'POST',
-            data: $(this).serialize(),
-            success: function(response) {
-                if (response.success) {
-                    alert('权限分配成功！');
-                    $('#assignModal').modal('hide');
-                    location.reload();
-                } else {
-                    alert('权限分配失败：' + response.message);
-                }
-            },
-            error: function() {
-                alert('请求失败，请重试');
+document.addEventListener('DOMContentLoaded', function() {
+  function getCSRF() {
+    var el = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (el) return el.value;
+    // fallback to cookie
+    var match = document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/);
+    return match ? match.pop() : '';
+  }
+
+  function jsonFetch(url, opts) {
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    opts.headers['X-Requested-With'] = 'XMLHttpRequest';
+    opts.credentials = opts.credentials || 'same-origin';
+    return fetch(url, opts).then(function(resp) { return resp.json(); });
+  }
+
+  var platformSelect = document.getElementById('platformSelect');
+  var projectSelect = document.getElementById('projectSelect');
+
+  if (platformSelect) {
+    platformSelect.addEventListener('change', function() {
+      var platform = this.value;
+      if (!projectSelect) return;
+
+      if (platform) {
+        projectSelect.disabled = false;
+        projectSelect.innerHTML = '<option value="">加载中...</option>';
+
+        jsonFetch('/get-platform-projects/?platform=' + encodeURIComponent(platform))
+          .then(function(data) {
+            if (data.success) {
+              projectSelect.innerHTML = '<option value="">请选择项目</option>';
+              data.projects.forEach(function(project) {
+                var opt = document.createElement('option');
+                opt.value = project.poiId;
+                opt.textContent = project.title + ' - ' + project.poiId;
+                projectSelect.appendChild(opt);
+              });
+            } else {
+              projectSelect.innerHTML = '<option value="">加载失败</option>';
             }
-        });
+          }).catch(function() {
+            projectSelect.innerHTML = '<option value="">加载失败</option>';
+          });
+      } else {
+        projectSelect.disabled = true;
+        projectSelect.innerHTML = '<option value="">请先选择平台</option>';
+      }
     });
+  }
+
+  var assignForm = document.getElementById('assignForm');
+  if (assignForm) {
+    assignForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var fd = new FormData(assignForm);
+      fetch('/assign-project-permission/', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-CSRFToken': getCSRF() },
+        credentials: 'same-origin'
+      }).then(function(resp) { return resp.json(); })
+        .then(function(data) {
+          if (data.success) {
+            alert('权限分配成功！');
+            // Close Alpine modal by dispatching close event
+            window.dispatchEvent(new CustomEvent('close-assign-modal'));
+            location.reload();
+          } else {
+            alert('权限分配失败：' + (data.message || '未知错误'));
+          }
+        }).catch(function() { alert('请求失败，请重试'); });
+    });
+  }
 });
 
-// 显示分配权限模态框
 function showAssignModal() {
-    console.log('显示分配权限模态框');
-    
-    // 重置表单
-    $('#assignForm')[0].reset();
-    $('#platformSelect').val('');
-    $('#projectSelect').prop('disabled', true).html('<option value="">请先选择平台</option>');
-    
-    // 确保事件绑定
-    console.log('平台选择框元素数量:', $('#platformSelect').length);
-    console.log('项目选择框元素数量:', $('#projectSelect').length);
-    
-    const modal = new bootstrap.Modal(document.getElementById('assignModal'));
-    modal.show();
-    
-    // 模态框显示后再次检查元素
-    setTimeout(function() {
-        console.log('模态框显示后检查元素:');
-        console.log('平台选择框:', $('#platformSelect').length);
-        console.log('项目选择框:', $('#projectSelect').length);
-        
-        // 测试事件绑定
-        $('#platformSelect').trigger('change');
-        console.log('手动触发平台选择框change事件');
-    }, 500);
+  // Legacy function compatibility: dispatch open event for Alpine modal
+  window.dispatchEvent(new CustomEvent('open-assign-modal'));
+  setTimeout(function() {
+    var platformSelect = document.getElementById('platformSelect');
+    if (platformSelect) platformSelect.dispatchEvent(new Event('change'));
+  }, 300);
 }
 
-// 撤销权限
 function revokePermission(permissionId) {
-    if (confirm('确定要撤销该项目的权限吗？')) {
-        $.ajax({
-            url: '/revoke-project-permission/' + permissionId + '/',
-            type: 'POST',
-            success: function(response) {
-                if (response.success) {
-                    alert('权限撤销成功！');
-                    location.reload();
-                } else {
-                    alert('权限撤销失败：' + response.message);
-                }
-            },
-            error: function() {
-                alert('请求失败，请重试');
-            }
-        });
-    }
+  if (!confirm('确定要撤销该项目的权限吗？')) return;
+  var tokenEl = document.querySelector('[name=csrfmiddlewaretoken]');
+  var csrf = tokenEl ? tokenEl.value : (document.cookie.match(/(^|;)\s*csrftoken=([^;]+)/) || []).pop();
+
+  fetch('/revoke-project-permission/' + permissionId + '/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+    credentials: 'same-origin'
+  }).then(function(resp) { return resp.json(); })
+    .then(function(data) {
+      if (data.success) { alert('权限撤销成功！'); location.reload(); }
+      else { alert('权限撤销失败：' + (data.message || '未知错误')); }
+    }).catch(function() { alert('请求失败，请重试'); });
 }
 </script>
 {% endblock %}

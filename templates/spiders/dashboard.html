@@ -18,8 +18,8 @@
 <!-- 今日/摘要统计 -->
 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
   <div class="col-span-1">
-    <div class="card-soft p-4">
-      <h3 class="text-sm font-medium text-muted">今日新增分析数据</h3>
+    <div class="card-retro p-4">
+      <h3 class="text-sm font-medium text-muted font-serif text-retro-heading">今日新增分析数据</h3>
       <div class="text-2xl font-bold mt-2 text-primary">{{ today_sentiment|default:0 }}</div>
     </div>
   </div>
@@ -46,8 +46,8 @@
 <!-- 图表与平台分布 -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
   <div class="lg:col-span-2">
-    <div class="card-soft p-4" style="height:400px;">
-      <h4 class="text-lg font-semibold mb-2">数据增长趋势（最近12个月）</h4>
+    <div class="card-retro p-4" style="height:400px;">
+      <h4 class="text-lg font-semibold mb-2 font-serif text-retro-heading">数据增长趋势（最近12个月）</h4>
       <div class="h-full">
         <canvas id="monthlyGrowthChart"></canvas>
       </div>
@@ -62,8 +62,8 @@
 </div>
 
 <!-- 每日增长趋势 -->
-<div class="card-soft p-4 mb-6">
-  <h4 class="text-lg font-semibold mb-2">每日数据增长（最近30天）</h4>
+<div class="card-retro p-4 mb-6">
+  <h4 class="text-lg font-semibold mb-2 font-serif text-retro-heading">每日数据增长（最近30天）</h4>
   <canvas id="dailyGrowthChart" width="400" height="150"></canvas>
 </div>
 
@@ -71,7 +71,7 @@
 <div class="card-soft p-4">
   <h4 class="text-lg font-semibold mb-4">平台详细统计</h4>
   <div class="overflow-x-auto">
-    <table class="min-w-full table-auto divide-y">
+    <table class="min-w-full table-auto divide-y table-retro">
       <thead class="bg-gray-50">
         <tr>
           <th class="px-4 py-2 text-left text-sm font-medium text-muted">平台</th>

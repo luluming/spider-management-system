@@ -220,6 +220,36 @@ spider_management_system/
 - 检查文件权限：`chmod +x start.sh`
 - 检查目录权限：`chmod -R 755 /opt/spider_management_system`
 
+## E2E 测试（Playwright）
+
+项目现在包含一个轻量级的 Playwright E2E 测试套件，用于在 CI 中做页面加载和关键元素回归检查。
+
+快速本地运行说明：
+
+1. 安装 Node.js (v16+) 和项目依赖：
+
+```bash
+npm ci
+npx playwright install --with-deps
+```
+
+2. 启动 Django 服务（在另一个终端）：
+
+```bash
+python manage.py migrate --noinput
+python manage.py runserver 0.0.0.0:8000
+```
+
+3. 运行 E2E 测试：
+
+```bash
+npm run test:e2e
+```
+
+> CI: 已添加 `.github/workflows/playwright.yml`，在 push / pull_request 时会自动运行 Playwright 测试。
+
+---
+
 ## 更新日志
 
 ### v1.0.0 (2025-01-27)

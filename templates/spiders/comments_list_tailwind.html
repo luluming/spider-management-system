@@ -179,7 +179,7 @@
 </div>
 
 <!-- Comments Table -->
-<div class="bg-white shadow overflow-hidden sm:rounded-md">
+<div class="card-retro overflow-hidden shadow rounded-lg">
     <div class="px-6 py-4 border-b border-gray-200">
         <div class="flex justify-between items-center">
             <h3 class="text-lg font-medium text-gray-900 flex items-center font-serif text-retro-heading">
@@ -205,66 +205,60 @@
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Platform change handler
-    $('#platform').change(function() {
-        var platform = $(this).val();
-        var projectSelect = $('#project');
-
-        if (platform) {
-            // Load projects for selected platform
-            $.get('/get-projects-by-platform/', { platform: platform })
-                .done(function(data) {
-                    projectSelect.empty().append('<option value="">全部项目</option>');
-                    data.forEach(function(project) {
-                        projectSelect.append('<option value="' + project + '">' + project + '</option>');
-                    });
-                });
-        } else {
-            projectSelect.empty().append('<option value="">全部项目</option>');
-        }
-    });
-
-    // Reset filters
-    $('#reset-filters').click(function() {
-        $('#filter-form')[0].reset();
-        window.location.href = window.location.pathname;
-    });
-
-    // Page size change
-    $('#page_size_select').change(function() {
-        var url = new URL(window.location);
-        url.searchParams.set('page_size', $(this).val());
-        url.searchParams.set('page', '1');
-        window.location.href = url.toString();
-    });
-
-    // AJAX pagination
-    $(document).on('click', '.pagination-link', function(e) {
-        e.preventDefault();
-        var page = $(this).data('page');
-        var url = new URL(window.location);
-        url.searchParams.set('page', page);
-        window.location.href = url.toString();
-    });
-
-    // Load statistics
-    function loadStatistics() {
-        var formData = $('#filter-form').serialize();
-        $.get('/get-statistics/?' + formData)
-            .done(function(data) {
-                $('#stat-comments').text(data.total_comments || '-');
-                $('#stat-rating').text(data.avg_rating ? data.avg_rating.toFixed(1) : '-');
-                $('#stat-likes').text(data.total_likes || '-');
-                $('#stat-users').text(data.active_users || '-');
+document.addEventListener('DOMContentLoaded', function() {
+  // Platform change handler
+  var platformEl = document.getElementById('platform');
+  var projectSelect = document.getElementById('project');
+  if (platformEl) {
+    platformEl.addEventListener('change', function() {
+      var platform = this.value;
+      if (platform) {
+        fetch('/get-projects-by-platform/?platform=' + encodeURIComponent(platform), { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+          .then(function(resp){ return resp.json(); })
+          .then(function(data){
+            if (!projectSelect) return;
+            projectSelect.innerHTML = '<option value="">全部项目</option>';
+            data.forEach(function(project) {
+              var opt = document.createElement('option'); opt.value = project; opt.textContent = project; projectSelect.appendChild(opt);
             });
-    }
+          }).catch(function(){ if (projectSelect) projectSelect.innerHTML = '<option value="">全部项目</option>'; });
+      } else {
+        if (projectSelect) projectSelect.innerHTML = '<option value="">全部项目</option>';
+      }
+    });
+  }
 
-    // Load statistics on page load
-    loadStatistics();
+  // Reset filters
+  var resetBtn = document.getElementById('reset-filters');
+  if (resetBtn) resetBtn.addEventListener('click', function(){ var f = document.getElementById('filter-form'); if(f) f.reset(); window.location.href = window.location.pathname; });
 
-    // Reload statistics when filters change
-    $('#filter-form select, #filter-form input').change(loadStatistics);
+  // Page size change
+  var pageSizeSelect = document.getElementById('page_size_select');
+  if (pageSizeSelect) pageSizeSelect.addEventListener('change', function(){ var url = new URL(window.location); url.searchParams.set('page_size', this.value); url.searchParams.set('page', '1'); window.location.href = url.toString(); });
+
+  // AJAX pagination (delegation)
+  document.addEventListener('click', function(e){ var a = e.target.closest('.pagination-link'); if (a) { e.preventDefault(); var page = a.dataset.page; var url = new URL(window.location); url.searchParams.set('page', page); window.location.href = url.toString(); } });
+
+  function loadStatistics(){
+    var form = document.getElementById('filter-form');
+    var params = form ? new URLSearchParams(new FormData(form)).toString() : '';
+    fetch('/get-statistics/?' + params, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+      .then(function(resp){ return resp.json(); })
+      .then(function(data){
+        var setText = function(id, text){ var el = document.getElementById(id); if(el) el.textContent = text; };
+        setText('stat-comments', data.total_comments || '-');
+        setText('stat-rating', data.avg_rating ? data.avg_rating.toFixed(1) : '-');
+        setText('stat-likes', data.total_likes || '-');
+        setText('stat-users', data.active_users || '-');
+      }).catch(function(){});
+  }
+
+  loadStatistics();
+
+  var filterForm = document.getElementById('filter-form');
+  if (filterForm) {
+    filterForm.querySelectorAll('select, input').forEach(function(el){ el.addEventListener('change', loadStatistics); });
+  }
 });
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_tailwind.html' %}
 {% load static %}
 
 {% block title %}添加评论{% endblock %}
@@ -7,8 +7,8 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
+            <div class="card-retro p-4">
+                <div class="card-title font-serif text-retro-heading">
                     <h4 class="mb-0">
                         <i class="fas fa-plus me-2"></i>添加评论
                     </h4>
@@ -51,10 +51,10 @@
                             <textarea name="comment_content" class="form-control" rows="4" required></textarea>
                         </div>
                         <div class="mb-3">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary btn-retro">
                                 <i class="fas fa-save me-1"></i>保存
                             </button>
-                            <a href="{% url 'data_management' %}" class="btn btn-secondary">
+                            <a href="{% url 'data_management' %}" class="btn btn-secondary btn-retro-secondary">
                                 <i class="fas fa-arrow-left me-1"></i>返回
                             </a>
                         </div>

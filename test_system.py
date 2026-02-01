@@ -99,6 +99,24 @@ def test_views():
         else:
             print(f"✗ 登录页面失败: {response.status_code}")
             return False
+
+        # 测试 /login 是否最终重定向到 /accounts/login/（支持无斜杠请求）
+        response = client.get('/login', follow=True)
+        final_path = response.request.get('PATH_INFO', '')
+        if final_path == '/accounts/login/':
+            print("✓ /login 重定向到 /accounts/login/")
+        else:
+            print(f"✗ /login 重定向失败: final_path={final_path}")
+            return False
+
+        # 测试静态 CSS 是否以正确 Content-Type 返回
+        response = client.get('/static/css/retro.css')
+        content_type = response.get('Content-Type', '')
+        if response.status_code == 200 and 'text/css' in content_type:
+            print("✓ /static/css/retro.css 返回正确的 Content-Type")
+        else:
+            print(f"✗ /static/css/retro.css 返回异常: status={response.status_code}, Content-Type={content_type}")
+            return False
         
         # 测试主页（需要登录）
         response = client.get('/')
