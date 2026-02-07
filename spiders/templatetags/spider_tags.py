@@ -55,9 +55,14 @@ def anomaly_labels(comment):
     now = timezone.now()
     current_year = now.year
 
-    if grade is not None and (grade == 1 or grade == 1.0):
+    try:
+        grade_num = float(grade) if grade is not None else None
+    except (TypeError, ValueError):
+        grade_num = None
+
+    if grade_num is not None and (grade_num == 1 or grade_num == 1.0):
         labels.append('1分')
-    elif grade is not None and grade <= 2:
+    elif grade_num is not None and grade_num <= 2:
         labels.append('差评')
     if release_time and (release_time.year > current_year or release_time > now):
         labels.append('时间异常')
