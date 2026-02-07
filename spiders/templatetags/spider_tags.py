@@ -33,6 +33,16 @@ def can_manage_users(user):
         return False
 
 
+@register.simple_tag
+def url_if_exists(view_name):
+    """安全解析URL，若不存在则返回空字符串，避免NoReverseMatch"""
+    try:
+        from django.urls import reverse
+        return reverse(view_name)
+    except Exception:
+        return ''
+
+
 @register.filter
 def anomaly_labels(comment):
     """返回评论的异常类型标签列表（去重：1分时不重复显示差评）"""
