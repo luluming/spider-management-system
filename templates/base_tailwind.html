@@ -1,4 +1,4 @@
-{% load static tailwind_tags %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="zh-CN" class="h-full">
 <head>
@@ -6,18 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}数据管理系统{% endblock %}</title>
-    {% tailwind_css %}
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/_tokens.css' %}">
     <link rel="stylesheet" href="{% static 'css/retro.css' %}">
+    {% block extra_css %}{% endblock %}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
 <body class="h-full bg-gray-50">
+    {% if user.is_authenticated %}
     <div class="min-h-full flex">
         <!-- Sidebar -->
         <div class="hidden lg:flex lg:flex-shrink-0">
             <div class="flex flex-col w-64">
-                <!-- Sidebar component -->
                 <div class="flex flex-col flex-grow bg-gradient-to-b from-blue-600 to-blue-800 pt-5 pb-4 overflow-y-auto">
                     <div class="flex items-center flex-shrink-0 px-4">
                         <div class="flex items-center">
@@ -37,6 +38,10 @@
                             <i class="fas fa-comments mr-3"></i>
                             评论数据
                         </a>
+                        <a href="{% url 'comment_anomaly_check' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md {% if request.resolver_match.url_name == 'comment_anomaly_check' %}bg-blue-700 text-white{% else %}text-blue-100 hover:bg-blue-700 hover:text-white{% endif %} transition-colors duration-200">
+                            <i class="fas fa-exclamation-triangle mr-3"></i>
+                            数据异常检查
+                        </a>
                         <a href="{% url 'data_management' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md {% if request.resolver_match.url_name == 'data_management' %}bg-blue-700 text-white{% else %}text-blue-100 hover:bg-blue-700 hover:text-white{% endif %} transition-colors duration-200">
                             <i class="fas fa-database mr-3"></i>
                             数据管理
@@ -49,7 +54,6 @@
                             <i class="fas fa-brain mr-3"></i>
                             情感分析
                         </a>
-
                         <a href="{% url 'basic_table_query' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md {% if request.resolver_match.url_name == 'basic_table_query' %}bg-blue-700 text-white{% else %}text-blue-100 hover:bg-blue-700 hover:text-white{% endif %} transition-colors duration-200">
                             <i class="fas fa-table mr-3"></i>
                             基础表
@@ -62,7 +66,6 @@
                             <i class="fas fa-list-alt mr-3"></i>
                             操作日志
                         </a>
-
                         {% endblock %}
                     </nav>
                 </div>
@@ -71,7 +74,6 @@
 
         <!-- Main content -->
         <div class="flex flex-col w-0 flex-1 overflow-hidden">
-            <!-- Top navigation -->
             <div class="relative z-10 flex-shrink-0 flex h-16 bg-white shadow border-b border-gray-200">
                 <button type="button" class="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 lg:hidden">
                     <span class="sr-only">Open sidebar</span>
@@ -90,7 +92,6 @@
                         </div>
                     </div>
                     <div class="ml-4 flex items-center md:ml-6">
-                        <!-- Profile dropdown -->
                         <div class="ml-3 relative" x-data="{ open: false }">
                             <div>
                                 <button type="button" class="max-w-xs bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" id="user-menu-button" @click="open = !open" aria-expanded="false" aria-haspopup="true">
@@ -115,29 +116,24 @@
                 </div>
             </div>
 
-            <!-- Page content -->
             <main class="flex-1 relative overflow-y-auto focus:outline-none">
                 <div class="py-6">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <!-- Page header -->
                         <div class="mb-8">
                             <h1 class="text-3xl font-bold text-gray-900 font-serif text-retro-heading">{% block page_title %}{% endblock %}</h1>
                             {% block page_description %}{% endblock %}
                         </div>
-
-                        <!-- Page content -->
                         {% block content %}{% endblock %}
                     </div>
                 </div>
             </main>
         </div>
     </div>
+    {% else %}
+    {% block auth_content %}{% endblock %}
+    {% endif %}
 
-    <!-- Global scripts -->
-    <!-- jQuery removed: not required (legacy scripts only). Uncomment if you need jQuery for third-party plugins. -->
-    <!-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_js %}{% endblock %}
 </body>

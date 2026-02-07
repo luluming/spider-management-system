@@ -7,6 +7,7 @@ urlpatterns = [
     path('get-platform-monthly-trends/', views.get_platform_monthly_trends, name='get_platform_monthly_trends'),
     path('get-platform-project-daily-trends/', views.get_platform_project_daily_trends, name='get_platform_project_daily_trends'),
     path('comments/', views.comments_list, name='comments_list'),
+    path('comment-anomaly-check/', views.comment_anomaly_check, name='comment_anomaly_check'),
     path('get-projects/', views.get_projects, name='get_projects'),
     path('get-statistics/', views.get_statistics, name='get_statistics'),
     path('export/', views.export_data, name='export_data'),

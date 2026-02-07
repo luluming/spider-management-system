@@ -13,8 +13,8 @@
         </h5>
     </div>
     <div class="card-body">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y table-retro">
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 65vh;">
+            <table class="min-w-full divide-y divide-gray-200 table-retro">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-2 text-left text-sm font-medium text-muted">用户</th>
@@ -96,23 +96,21 @@
         
         <!-- 分页 -->
         {% if page_obj.has_other_pages %}
-        <nav aria-label="分页导航" class="mt-4 flex items-center justify-center">
+        <nav aria-label="分页导航" class="mt-4 flex flex-wrap justify-center gap-2">
             {% if page_obj.has_previous %}
-            <a href="?page=1" class="px-3 py-1 border rounded-l">首页</a>
-            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border">上一页</a>
+            <a href="?page=1" class="px-3 py-1 border rounded-l btn-retro-secondary">首页</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border btn-retro-secondary">上一页</a>
             {% endif %}
-            
             {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                <span class="px-3 py-1 border bg-primary-600 text-white">{{ num }}</span>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <a class="px-3 py-1 border" href="?page={{ num }}">{{ num }}</a>
-                {% endif %}
+            {% if page_obj.number == num %}
+            <span class="px-3 py-1 border bg-blue-600 text-white rounded">{{ num }}</span>
+            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a class="px-3 py-1 border rounded btn-retro-secondary" href="?page={{ num }}">{{ num }}</a>
+            {% endif %}
             {% endfor %}
-            
             {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border">下一页</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 border rounded-r">末页</a>
+            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border btn-retro-secondary">下一页</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="px-3 py-1 border rounded-r btn-retro-secondary">末页</a>
             {% endif %}
         </nav>
         

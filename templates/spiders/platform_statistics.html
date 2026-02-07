@@ -139,34 +139,37 @@
         </div>
 
         <!-- 平台对比表格 -->
-        <div class="data-card">
-            <div class="card-title">
-                <i class="fas fa-table"></i>
-                平台汇总统计表
+        <div class="card-retro p-4 mb-4">
+            <div class="text-lg font-semibold font-serif text-retro-heading mb-3">
+                <i class="fas fa-table mr-2"></i>平台汇总统计表
             </div>
-            <div style="overflow-x: auto;">
-                <table class="monthly-table" style="width: 100%;">
-                    <thead>
+            <div class="overflow-x-auto overflow-y-auto" style="max-height: 50vh;">
+                <table class="min-w-full divide-y divide-gray-200 table-retro">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <th>平台名称</th>
-                            <th>总数据量</th>
-                            <th>{{ stat.yearly_data.0.year|default:"2023" }}年</th>
-                            <th>{{ stat.yearly_data.1.year|default:"2024" }}年</th>
-                            <th>{{ stat.yearly_data.2.year|default:"2025" }}年</th>
-                            <th>占比</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">平台名称</th>
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">总数据量</th>
+                            {% for stat in platform_stats_detailed %}
+                            {% if forloop.first %}
+                            {% for year_data in stat.yearly_data %}
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">{{ year_data.year }}年</th>
+                            {% endfor %}
+                            {% endif %}
+                            {% empty %}
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">年度数据</th>
+                            {% endfor %}
+                            <th class="px-4 py-2 text-left text-sm font-medium text-gray-500">占比</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="divide-y bg-white">
                         {% for stat in platform_stats_detailed %}
                         <tr>
-                            <td><strong>{{ stat.platform }}</strong></td>
-                            <td><strong>{{ stat.total_count }}</strong></td>
+                            <td class="px-4 py-2"><strong>{{ stat.platform }}</strong></td>
+                            <td class="px-4 py-2"><strong>{{ stat.total_count }}</strong></td>
                             {% for year_data in stat.yearly_data %}
-                                <td>{{ year_data.count }}</td>
+                            <td class="px-4 py-2">{{ year_data.count }}</td>
                             {% endfor %}
-                            <td>
-            
-                            </td>
+                            <td class="px-4 py-2">-</td>
                         </tr>
                         {% endfor %}
                     </tbody>

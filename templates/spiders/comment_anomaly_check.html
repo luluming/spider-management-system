@@ -1,0 +1,163 @@
+{% extends 'base_tailwind.html' %}
+{% load static %}
+{% load spider_tags %}
+
+{% block title %}评论数据异常检查 - 数据管理系统{% endblock %}
+
+{% block extra_css %}
+<style>
+.anomaly-page .card-retro { border-color: #bfdbfe; background: linear-gradient(180deg, #f0f9ff, #fff); }
+.anomaly-page .stat-card { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-color: #bae6fd; }
+.anomaly-page .stat-card:hover { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12); }
+.anomaly-page select:focus, .anomaly-page input:focus { border-color: #60a5fa; }
+.anomaly-page .btn-retro { background: #3b82f6; }
+.anomaly-page .btn-retro:hover { background: #2563eb; }
+.anomaly-page #anomaly-list thead { background: #eff6ff !important; }
+.anomaly-page #anomaly-list tbody tr:hover { background: #f0f9ff !important; }
+.anomaly-page .pagination-link { background: #fff !important; border-color: #bfdbfe !important; color: #2563eb !important; }
+.anomaly-page .pagination-link:hover { background: #eff6ff !important; }
+.anomaly-page .badge-rating-1 { background: #fef3c7; color: #92400e; }
+.anomaly-page .badge-negative { background: #fee2e2; color: #991b1b; }
+.anomaly-page .badge-time { background: #e0e7ff; color: #3730a3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="anomaly-page">
+<div class="card-retro p-4 mb-4">
+    <div class="font-serif text-retro-heading mb-3 flex items-center">
+        <i class="fas fa-exclamation-triangle mr-3 text-amber-500"></i>
+        <h3 class="text-lg font-semibold mb-0">异常数据筛选</h3>
+    </div>
+    <form id="filter-form" method="get">
+        <div class="grid grid-cols-1 sm:grid-cols-6 gap-4">
+            <div class="sm:col-span-1">
+                <label for="platform" class="block text-sm font-medium text-gray-700">平台</label>
+                <select id="platform" name="platform" class="border rounded px-2 py-1 w-full">
+                    <option value="">全部平台</option>
+                    {% for p in platforms %}
+                    <option value="{{ p }}" {% if current_filters.platform == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-1">
+                <label for="project" class="block text-sm font-medium text-gray-700">项目</label>
+                <select id="project" name="project" class="border rounded px-2 py-1 w-full">
+                    <option value="">全部项目</option>
+                    {% for p in projects %}
+                    <option value="{{ p }}" {% if current_filters.project == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">异常类型</label>
+                <div class="flex flex-wrap gap-2">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="anomaly_type" value="rating_1" {% if 'rating_1' in current_filters.anomaly_types %}checked{% endif %} class="rounded border-gray-300">
+                        <span class="ml-1 text-sm">1分评分</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="anomaly_type" value="negative" {% if 'negative' in current_filters.anomaly_types %}checked{% endif %} class="rounded border-gray-300">
+                        <span class="ml-1 text-sm">差评(≤2星)</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="anomaly_type" value="time_abnormal" {% if 'time_abnormal' in current_filters.anomaly_types %}checked{% endif %} class="rounded border-gray-300">
+                        <span class="ml-1 text-sm">时间异常</span>
+                    </label>
+                </div>
+            </div>
+            <div class="sm:col-span-1">
+                <label for="page_size" class="block text-sm font-medium text-gray-700">每页</label>
+                <select id="page_size" name="page_size" class="border rounded px-2 py-1 w-full">
+                    <option value="10" {% if current_filters.page_size == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if current_filters.page_size == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if current_filters.page_size == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if current_filters.page_size == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button type="submit" class="btn-retro btn-sm"><i class="fas fa-search mr-1"></i>筛选</button>
+            <a href="{% url 'comment_anomaly_check' %}" class="px-4 py-2 text-sm font-medium rounded-lg border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 inline-flex items-center"><i class="fas fa-undo mr-2"></i>重置</a>
+        </div>
+    </form>
+</div>
+
+<div class="card-retro p-4">
+    <div class="font-serif text-retro-heading flex items-center justify-between mb-3">
+        <h5 class="mb-0 text-lg font-semibold">
+            <i class="fas fa-list mr-2"></i>
+            异常数据列表
+        </h5>
+    </div>
+    <div id="anomaly-list">
+        {% include 'spiders/comment_anomaly_content.html' %}
+    </div>
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.getElementById('filter-form');
+    var platformEl = document.getElementById('platform');
+    var projectSelect = document.getElementById('project');
+
+    if (platformEl) {
+        platformEl.addEventListener('change', function() {
+            var platform = this.value;
+            if (platform) {
+                projectSelect.disabled = true;
+                projectSelect.innerHTML = '<option value="">加载中...</option>';
+                fetch('{% url "get_projects_by_platform" %}?platform=' + encodeURIComponent(platform), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        projectSelect.innerHTML = '<option value="">全部项目</option>';
+                        if (data.success && data.projects) {
+                            data.projects.forEach(function(p) {
+                                var opt = document.createElement('option');
+                                opt.value = p;
+                                opt.textContent = p;
+                                projectSelect.appendChild(opt);
+                            });
+                        }
+                        projectSelect.disabled = false;
+                    }).catch(function() { projectSelect.disabled = false; projectSelect.innerHTML = '<option value="">全部项目</option>'; });
+            } else {
+                projectSelect.innerHTML = '<option value="">全部项目</option>';
+            }
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var params = new URLSearchParams(new FormData(form)).toString();
+            fetch('{% url "comment_anomaly_check" %}?' + params, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function(r) { return r.text(); })
+                .then(function(html) {
+                    if (html.indexOf('用户登录') !== -1 || html.indexOf('<html') === 0) {
+                        window.location.href = '{% url "login" %}';
+                        return;
+                    }
+                    document.getElementById('anomaly-list').innerHTML = html;
+                });
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        var el = e.target.closest('.pagination-link');
+        if (!el || !document.getElementById('anomaly-list')) return;
+        e.preventDefault();
+        var form = document.getElementById('filter-form');
+        var params = form ? new URLSearchParams(new FormData(form)) : new URLSearchParams();
+        params.set('page', el.dataset.page);
+        fetch('{% url "comment_anomaly_check" %}?' + params.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                if (html.indexOf('用户登录') !== -1) { window.location.href = '{% url "login" %}'; return; }
+                document.getElementById('anomaly-list').innerHTML = html;
+            });
+    });
+});
+</script>
+{% endblock %}

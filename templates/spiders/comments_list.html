@@ -4,7 +4,26 @@
 
 {% block page_title %}评论数据{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* 评论页面淡蓝色主题 */
+  .comments-page .card-retro { border-color: #bfdbfe; background: linear-gradient(180deg, #f0f9ff, #fff); }
+  .comments-page .stat-card { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-color: #bae6fd; }
+  .comments-page .stat-card:hover { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12); }
+  .comments-page select:focus, .comments-page input:focus { border-color: #60a5fa; ring-color: #93c5fd; }
+  .comments-page .btn-retro { background: #3b82f6; }
+  .comments-page .btn-retro:hover { background: #2563eb; }
+  .comments-page #comments-list .overflow-x-auto { border-color: #bfdbfe; }
+  .comments-page #comments-list thead { background: #eff6ff !important; }
+  .comments-page #comments-list tbody tr:hover { background: #f0f9ff !important; }
+  /* 覆盖 retro.css 的 .pagination-link，确保分页按钮样式正确 */
+  .comments-page #comments-list .pagination-link { background: #fff !important; border-color: #bfdbfe !important; color: #2563eb !important; }
+  .comments-page #comments-list .pagination-link:hover { background: #eff6ff !important; }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="comments-page">
 <!-- 筛选表单 -->
 <div class="card-retro p-4 mb-4">
     <div class="font-serif text-retro-heading mb-3 flex items-center">
@@ -66,15 +85,15 @@
                 <button type="submit" class="btn-retro btn-sm">
                     <i class="fas fa-search mr-1"></i>筛选
                 </button>
-                <button type="button" class="btn-retro-secondary btn-sm" id="reset-filters">
-                    <i class="fas fa-undo mr-1"></i>重置
+                <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 hover:border-blue-300 transition-colors inline-flex items-center" id="reset-filters">
+                    <i class="fas fa-undo mr-2 text-blue-500"></i>重置
                 </button>
                 <button type="button" class="btn-retro btn-sm" id="export-data">
                     <i class="fas fa-download mr-1"></i>导出
                 </button>
                 <div class="ml-auto">
-                    <label for="page_size" class="block text-sm font-medium text-gray-700">每页</label>
-                    <select id="page_size" name="page_size" class="border rounded px-2 py-1">
+                    <label for="filter-page-size" class="block text-sm font-medium text-gray-700">每页</label>
+                    <select id="filter-page-size" name="page_size" class="border rounded px-2 py-1">
                         <option value="10" {% if current_filters.page_size == 10 %}selected{% endif %}>10</option>
                         <option value="20" {% if current_filters.page_size == 20 %}selected{% endif %}>20</option>
                         <option value="50" {% if current_filters.page_size == 50 %}selected{% endif %}>50</option>
@@ -95,7 +114,7 @@
                     <div class="text-xs uppercase text-gray-500">评论数量</div>
                     <div class="text-2xl font-bold mt-1" id="stat-comments">-</div>
                 </div>
-                <div class="ml-4 text-primary">
+                <div class="ml-4 text-blue-600">
                     <i class="fas fa-comments fa-2x"></i>
                 </div>
             </div>
@@ -137,7 +156,7 @@
                     <div class="text-xs uppercase text-gray-500">活跃用户</div>
                     <div class="text-2xl font-bold mt-1" id="stat-users">-</div>
                 </div>
-                <div class="ml-4 text-info">
+                <div class="ml-4 text-cyan-500">
                     <i class="fas fa-users fa-2x"></i>
                 </div>
             </div>
@@ -153,8 +172,8 @@
             评论列表
         </h5>
         <div class="flex items-center">
-            <label for="page_size" class="block text-sm font-medium text-gray-700 mr-2 mb-0">每页显示:</label>
-            <select id="page_size" name="page_size" class="border rounded px-2 py-1" style="width: auto;">
+            <label for="list-page-size" class="block text-sm font-medium text-gray-700 mr-2 mb-0">每页显示:</label>
+            <select id="list-page-size" name="page_size" class="border rounded px-2 py-1" style="width: auto;">
                 <option value="10" {% if current_filters.page_size == 10 %}selected{% endif %}>10</option>
                 <option value="20" {% if current_filters.page_size == 20 %}selected{% endif %}>20</option>
                 <option value="50" {% if current_filters.page_size == 50 %}selected{% endif %}>50</option>
@@ -162,9 +181,10 @@
             </select>
         </div>
     </div>
-    <div class="card-body" id="comments-list">
+    <div id="comments-list" class="mt-3">
         {% include 'spiders/comments_list_content_tailwind.html' %}
     </div>
+</div>
 </div>
 {% endblock %}
 
@@ -211,7 +231,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   var filterForm = document.getElementById('filter-form');
-  var pageSizeEl = document.getElementById('page_size');
+  var filterPageSize = document.getElementById('filter-page-size');
+  var listPageSize = document.getElementById('list-page-size');
+
+  function getPageSize() {
+    return (filterPageSize || listPageSize) ? (filterPageSize && filterPageSize.value || listPageSize && listPageSize.value || '10') : '10';
+  }
+
+  function syncPageSize(val) {
+    if (filterPageSize && filterPageSize.value !== val) filterPageSize.value = val;
+    if (listPageSize && listPageSize.value !== val) listPageSize.value = val;
+  }
 
   if (filterForm) {
     filterForm.addEventListener('submit', function(e) {
@@ -229,8 +259,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  if (pageSizeEl) {
-    pageSizeEl.addEventListener('change', function() { loadComments(); });
+  if (filterPageSize) {
+    filterPageSize.addEventListener('change', function() { syncPageSize(this.value); loadComments(); });
+  }
+  if (listPageSize) {
+    listPageSize.addEventListener('change', function() { syncPageSize(this.value); loadComments(); });
   }
 
   var exportBtn = document.getElementById('export-data');
@@ -244,29 +277,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function loadComments() {
     var params = filterForm ? serializeForm(filterForm) : '';
-    params += '&page_size=' + (pageSizeEl ? pageSizeEl.value : '10');
+    params += '&page_size=' + getPageSize();
 
     fetch('{% url "comments_list" %}?' + params, {
-      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin'
     }).then(function(resp) {
       if (!resp.ok) throw new Error('Network error');
-      return resp.text();
-    }).then(function(html) {
-      document.getElementById('comments-list').innerHTML = html;
+      return resp.text().then(function(html) {
+        if (html.indexOf('请输入用户名') !== -1 || html.indexOf('用户登录') !== -1 || html.indexOf('<html') === 0 || html.indexOf('<!DOCTYPE') === 0) {
+          window.location.href = '{% url "login" %}';
+          return;
+        }
+        var listEl = document.getElementById('comments-list');
+        if (listEl) listEl.innerHTML = html;
+      });
     }).catch(function() {
-      document.getElementById('comments-list').innerHTML = '<div class="alert alert-danger">加载数据失败，请重试</div>';
+      var listEl = document.getElementById('comments-list');
+      if (listEl) listEl.innerHTML = '<div class="p-4 rounded bg-red-50 border border-red-200 text-red-700">加载数据失败，请重试</div>';
     });
 
-    // 更新统计数据
     updateStatistics();
   }
 
   function updateStatistics() {
     var params = filterForm ? serializeForm(filterForm) : '';
-    fetch('{% url "get_statistics" %}?' + params, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
-      .then(function(resp) { return resp.json(); })
+    params += '&page_size=' + getPageSize();
+    fetch('{% url "get_statistics" %}?' + params, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin'
+    })
+      .then(function(resp) {
+        var ct = resp.headers.get('Content-Type') || '';
+        if (ct.indexOf('text/html') !== -1) {
+          window.location.href = '{% url "login" %}';
+          return Promise.reject('redirect');
+        }
+        return resp.json();
+      })
       .then(function(data) {
-        if (data.success) {
+        if (data && data.success) {
           var setText = function(id, text){ var el = document.getElementById(id); if(el) el.textContent = text; };
           setText('stat-comments', data.statistics.total_comments);
           setText('stat-rating', data.statistics.avg_rating);
@@ -278,6 +328,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 初始化统计数据
   updateStatistics();
+
+  document.addEventListener('click', async function(e) {
+    var el = e.target.closest('.pagination-link');
+    if (!el || !document.getElementById('comments-list')) return;
+    e.preventDefault();
+    var page = el.dataset.page;
+    try {
+      var form = document.getElementById('filter-form');
+      var params = form ? new URLSearchParams(new FormData(form)) : new URLSearchParams();
+      var pageSizeEl = document.getElementById('filter-page-size') || document.getElementById('list-page-size');
+      if (pageSizeEl) params.set('page_size', pageSizeEl.value);
+      params.set('page', page);
+      var resp = await fetch('{% url "comments_list" %}?' + params.toString(), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      });
+      if (!resp.ok) throw new Error('Network response was not ok');
+      var html = await resp.text();
+      if (html.indexOf('请输入用户名') !== -1 || html.indexOf('用户登录') !== -1 || html.indexOf('<html') === 0 || html.indexOf('<!DOCTYPE') === 0) {
+        window.location.href = '{% url "login" %}';
+        return;
+      }
+      document.getElementById('comments-list').innerHTML = html;
+    } catch (err) {
+      document.getElementById('comments-list').innerHTML = '<div class="p-4 rounded bg-red-50 border border-red-200 text-red-700">加载数据失败，请重试</div>';
+    }
+  });
 });
 </script>
 {% endblock %}

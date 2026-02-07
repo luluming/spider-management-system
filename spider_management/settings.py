@@ -39,27 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'spiders',
-    'tailwind',
-    'theme',
 ]
-
-# Conditionally enable WhiteNoise if it's installed to avoid failing tests when not available
-try:
-    import whitenoise  # noqa: F401
-    WHITENOISE_AVAILABLE = True
-except Exception:
-    WHITENOISE_AVAILABLE = False
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-]
-
-# Insert WhiteNoise middleware when available (after SecurityMiddleware)
-if WHITENOISE_AVAILABLE:
-    MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
-
-# Append remaining middleware
-MIDDLEWARE += [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -67,12 +50,6 @@ MIDDLEWARE += [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-# Static files storage - use WhiteNoise compressed manifest storage in production if available
-if WHITENOISE_AVAILABLE:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    # Optionally configure max age (in seconds) for immutable files
-    WHITENOISE_MAX_AGE = 31536000
 
 ROOT_URLCONF = 'spider_management.urls'
 
@@ -156,6 +133,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
+    BASE_DIR / 'theme' / 'static',
 ]
 
 # Media files
@@ -191,6 +169,3 @@ CACHES = {
 # Cache timeout settings
 CACHE_MIDDLEWARE_SECONDS = 300  # 5分钟
 CACHE_MIDDLEWARE_KEY_PREFIX = 'spider_management'
-
-# Tailwind CSS configuration
-TAILWIND_APP_NAME = 'theme'

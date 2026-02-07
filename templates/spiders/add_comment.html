@@ -4,64 +4,48 @@
 {% block title %}添加评论{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card-retro p-4">
-                <div class="card-title font-serif text-retro-heading">
-                    <h4 class="mb-0">
-                        <i class="fas fa-plus me-2"></i>添加评论
-                    </h4>
+<div class="max-w-4xl mx-auto py-6">
+    <div class="card-retro p-4">
+        <div class="mb-4">
+            <h4 class="text-lg font-semibold font-serif text-retro-heading"><i class="fas fa-plus mr-2"></i>添加评论</h4>
+        </div>
+        <form method="POST" id="addForm">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">用户名 <span class="text-red-500">*</span></label>
+                    <input type="text" name="user_name" class="w-full border rounded px-2 py-2" required>
                 </div>
-                <div class="card-body">
-                    <form method="POST" id="addForm">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">用户名 <span class="text-danger">*</span></label>
-                                    <input type="text" name="user_name" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">评分 <span class="text-danger">*</span></label>
-                                    <select name="comment_grade" class="form-select" required>
-                                        <option value="">请选择评分</option>
-                                        <option value="1">1星</option>
-                                        <option value="2">2星</option>
-                                        <option value="3">3星</option>
-                                        <option value="4">4星</option>
-                                        <option value="5">5星</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">项目 <span class="text-danger">*</span></label>
-                            <select name="poi_id" class="form-select" required>
-                                <option value="">请选择项目</option>
-                                {% for project in projects %}
-                                <option value="{{ project.poid }}">{{ project.IteamName }} ({{ project.SalesChannel }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">评论内容 <span class="text-danger">*</span></label>
-                            <textarea name="comment_content" class="form-control" rows="4" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <button type="submit" class="btn btn-primary btn-retro">
-                                <i class="fas fa-save me-1"></i>保存
-                            </button>
-                            <a href="{% url 'data_management' %}" class="btn btn-secondary btn-retro-secondary">
-                                <i class="fas fa-arrow-left me-1"></i>返回
-                            </a>
-                        </div>
-                    </form>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">评分 <span class="text-red-500">*</span></label>
+                    <select name="comment_grade" class="w-full border rounded px-2 py-2" required>
+                        <option value="">请选择评分</option>
+                        <option value="1">1星</option>
+                        <option value="2">2星</option>
+                        <option value="3">3星</option>
+                        <option value="4">4星</option>
+                        <option value="5">5星</option>
+                    </select>
                 </div>
             </div>
-        </div>
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">项目 <span class="text-red-500">*</span></label>
+                <select name="poi_id" class="w-full border rounded px-2 py-2" required>
+                    <option value="">请选择项目</option>
+                    {% for project in projects %}
+                    <option value="{{ project.poid }}">{{ project.IteamName }} ({{ project.SalesChannel }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">评论内容 <span class="text-red-500">*</span></label>
+                <textarea name="comment_content" class="w-full border rounded px-2 py-2" rows="4" required></textarea>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button type="submit" class="btn-retro px-4 py-2 rounded"><i class="fas fa-save mr-1"></i>保存</button>
+                <a href="{% url 'comments_list' %}" class="btn-retro-secondary px-4 py-2 rounded border"><i class="fas fa-arrow-left mr-1"></i>返回</a>
+            </div>
+        </form>
     </div>
 </div>
 

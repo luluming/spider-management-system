@@ -638,11 +638,98 @@ def comments_list(request):
         }
     }
     
-    # 如果是AJAX请求，只返回评论列表内容
+    # 如果是AJAX请求，只返回评论列表内容（与主页面保持一致使用tailwind模板）
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render(request, 'spiders/comments_list_content.html', {'page_obj': page_obj})
+        return render(request, 'spiders/comments_list_content_tailwind.html', {'page_obj': page_obj})
     
     return render(request, 'spiders/comments_list.html', context)
+
+
+@login_required
+def comment_anomaly_check(request):
+    """评论数据异常检查 - 显示1分评分、差评、时间异常等，支持修改和删除"""
+    platform = request.GET.get('platform', '')
+    project = request.GET.get('project', '')
+    anomaly_types = request.GET.getlist('anomaly_type')  # 可多选: rating_1, negative, time_abnormal
+    page_size = int(request.GET.get('page_size', 20))
+
+    # 基础查询：只查询在PSentiment中有记录的评论
+    valid_poi_ids = PSentiment.objects.values_list('poiId', flat=True).distinct()
+    queryset = QusetAnswer.objects.filter(poiId__in=valid_poi_ids).extra(
+        select={
+            'project_title': """
+                SELECT title FROM p_sentiment p 
+                WHERE p.poiId = quset_answer.poiId 
+                LIMIT 1
+            """,
+            'platform_source_c': """
+                SELECT source_c FROM p_sentiment p 
+                WHERE p.poiId = quset_answer.poiId 
+                LIMIT 1
+            """
+        }
+    )
+
+    # 平台/项目筛选
+    if platform or project:
+        sentiment_filter = PSentiment.objects.all()
+        if platform:
+            sentiment_filter = sentiment_filter.filter(source_c=platform)
+        if project:
+            sentiment_filter = sentiment_filter.filter(title__icontains=project)
+        filtered_poi_ids = list(sentiment_filter.values_list('poiId', flat=True))
+        if filtered_poi_ids:
+            queryset = queryset.filter(poiId__in=filtered_poi_ids)
+        else:
+            queryset = queryset.none()
+
+    # 异常类型筛选（至少选一种，否则显示全部异常）
+    now = timezone.now()
+    current_year = now.year
+    if anomaly_types:
+        q_anomaly = Q()
+        if 'rating_1' in anomaly_types:
+            q_anomaly |= Q(comment_grade=1) | Q(comment_grade=1.0)
+        if 'negative' in anomaly_types:
+            q_anomaly |= Q(comment_grade__lte=2)
+        if 'time_abnormal' in anomaly_types:
+            q_anomaly |= Q(release_time__year__gt=current_year) | Q(release_time__gt=now)
+        if q_anomaly:
+            queryset = queryset.filter(q_anomaly)
+    else:
+        # 默认显示所有异常类型：差评(≤2星)、时间异常
+        queryset = queryset.filter(
+            Q(comment_grade__lte=2) |
+            Q(release_time__year__gt=current_year) | Q(release_time__gt=now)
+        )
+
+    queryset = queryset.order_by('-release_time')
+
+    paginator = Paginator(queryset, page_size)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    platforms = PSentiment.objects.values_list('source_c', flat=True).distinct().exclude(source_c__isnull=True).exclude(source_c='').order_by('source_c')
+    projects = []
+    if platform:
+        projects = PSentiment.objects.filter(source_c=platform).values_list('title', flat=True).distinct().exclude(title__isnull=True).exclude(title='').order_by('title')
+
+    context = {
+        'page_obj': page_obj,
+        'platforms': platforms,
+        'projects': projects,
+        'current_filters': {
+            'platform': platform,
+            'project': project,
+            'anomaly_types': anomaly_types,
+            'page_size': page_size,
+        }
+    }
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'spiders/comment_anomaly_content.html', {'page_obj': page_obj})
+
+    return render(request, 'spiders/comment_anomaly_check.html', context)
 
 
 @csrf_exempt
@@ -732,9 +819,9 @@ def get_statistics(request):
             Q(comment_content__icontains=keyword)
         )
     
-    # 统计数据 - 基于QusetAnswer表
+    # 统计数据 - 基于QusetAnswer表（平均评分使用comment_grade）
     total_comments = queryset.count()
-    avg_rating = queryset.aggregate(avg=Avg('comment_num'))['avg'] or 0
+    avg_rating = queryset.aggregate(avg=Avg('comment_grade'))['avg'] or 0
     total_likes = queryset.aggregate(total=Sum('like_num'))['total'] or 0
     total_replies = queryset.aggregate(total=Sum('reply_num'))['total'] or 0
     active_users = queryset.values('user_name').distinct().count()

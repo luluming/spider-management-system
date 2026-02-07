@@ -33,4 +33,25 @@ def can_manage_users(user):
         return False
 
 
+@register.filter
+def anomaly_labels(comment):
+    """返回评论的异常类型标签列表（去重：1分时不重复显示差评）"""
+    from django.utils import timezone
+    labels = []
+    if comment is None:
+        return labels
+    grade = getattr(comment, 'comment_grade', None)
+    release_time = getattr(comment, 'release_time', None)
+    now = timezone.now()
+    current_year = now.year
+
+    if grade is not None and (grade == 1 or grade == 1.0):
+        labels.append('1分')
+    elif grade is not None and grade <= 2:
+        labels.append('差评')
+    if release_time and (release_time.year > current_year or release_time > now):
+        labels.append('时间异常')
+    return labels
+
+
 

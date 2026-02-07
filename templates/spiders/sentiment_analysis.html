@@ -6,217 +6,74 @@
 
 {% block extra_css %}
 <style>
-/* 简洁清新的设计 */
-:root {
-    --primary-blue: #2196f3;
-    --light-blue: #e3f2fd;
-    --dark-gray: #424242;
-    --light-gray: #f5f5f5;
-    --white: #ffffff;
-    --success: #4caf50;
-    --danger: #f44336;
-    --warning: #ff9800;
-}
-
-body {
-    background: var(--light-gray);
-    font-family: 'Microsoft YaHei', 'Arial', sans-serif;
-    color: var(--dark-gray);
-}
-
-/* 简洁头部 */
-.page-header {
-    background: var(--white);
-    border-bottom: 2px solid var(--primary-blue);
-    padding: 20px 0;
-    margin-bottom: 20px;
-}
-
-.page-title {
-    color: var(--dark-gray);
-    font-size: 1.8rem;
-    font-weight: 500;
-    margin: 0;
-    display: flex;
-    align-items: center;
-}
-
-.page-title i {
-    margin-right: 10px;
-    color: var(--primary-blue);
-}
-
-/* 简化的筛选区域 */
-.filter-section {
-    background: var(--white);
-    padding: 20px;
+.sentiment-page .card-retro, .sentiment-page .filter-section, .sentiment-page .data-card, .sentiment-page .chart-container {
+    border: 1px solid #bfdbfe;
+    background: linear-gradient(180deg, #f0f9ff, #fff);
     border-radius: 8px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
-.filter-row {
-    display: flex;
-    gap: 15px;
-    align-items: end;
-    flex-wrap: wrap;
+.sentiment-page .filter-section { padding: 20px; margin-bottom: 24px; }
+.sentiment-page .data-table thead th { position: sticky; top: 0; z-index: 1; }
+.sentiment-page .page-header {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
 }
-
-.form-group {
-    min-width: 150px;
+.sentiment-page .page-title i { color: #2563eb; }
+.sentiment-page .filter-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+.sentiment-page .form-group { min-width: 140px; }
+.sentiment-page .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #374151; font-size: 0.875rem; }
+.sentiment-page .form-control {
+    width: 100%; padding: 8px 12px; border: 1px solid #bfdbfe; border-radius: 6px; font-size: 14px;
 }
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: var(--dark-gray);
+.sentiment-page .form-control:focus {
+    outline: none; border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
 }
-
-.form-control {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
+.sentiment-page .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
 }
-
-.form-control:focus {
-    outline: none;
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+.sentiment-page .kpi-item {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
 }
-
-.btn-primary {
-    background: var(--primary-blue);
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 4px;
+.sentiment-page .kpi-item:hover { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12); }
+.sentiment-page .kpi-value { font-size: 1.75rem; font-weight: 700; color: #1d4ed8; margin-bottom: 4px; }
+.sentiment-page .kpi-label { color: #6b7280; font-size: 0.875rem; }
+.sentiment-page .chart-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 12px; color: #1e3a5f; }
+.sentiment-page .data-table th { background: #eff6ff !important; font-weight: 600; color: #1e3a5f; }
+.sentiment-page .data-table tr:hover { background: #f0f9ff !important; }
+.sentiment-page .data-table { border-collapse: collapse; }
+.sentiment-page .data-table th, .sentiment-page .data-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+.sentiment-page .card-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 12px; color: #1e3a5f; border-bottom: 2px solid #bfdbfe; padding-bottom: 8px; }
+.sentiment-page .btn-retro, .sentiment-page .btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    border: 1px solid #2563eb;
+    padding: 8px 18px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
+    transition: all 0.2s;
 }
-
-.btn-primary:hover {
-    background: #1976d2;
+.sentiment-page .btn-retro:hover, .sentiment-page .btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 }
-
-/* 简化的数据卡片 */
-.data-card {
-    background: var(--white);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.card-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: var(--dark-gray);
-    border-bottom: 2px solid var(--light-blue);
-    padding-bottom: 8px;
-}
-
-/* KPI指标 - 简化设计 */
-.kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.kpi-item {
-    background: var(--white);
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-left: 4px solid var(--primary-blue);
-}
-
-.kpi-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-blue);
-    margin-bottom: 5px;
-}
-
-.kpi-label {
-    color: var(--dark-gray);
-    font-size: 0.9rem;
-}
-
-/* 图表容器 */
-.chart-container {
-    background: var(--white);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    height: 450px;
-    overflow: hidden;
-}
-
-.chart-container canvas {
-    max-height: 100%;
-    width: 100% !important;
-    height: auto !important;
-}
-
-.chart-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-bottom: 15px;
-    color: var(--dark-gray);
-}
-
-/* 数据表格 */
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.data-table th,
-.data-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #eee;
-}
-
-.data-table th {
-    background: var(--light-blue);
-    font-weight: 600;
-    color: var(--dark-gray);
-}
-
-.data-table tr:hover {
-    background: #f9f9f9;
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
-    .filter-row {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .form-group {
-        min-width: auto;
-        width: 100%;
-    }
-    
-    .kpi-grid {
-        grid-template-columns: 1fr 1fr;
-    }
+    .sentiment-page .filter-row { flex-direction: column; }
+    .sentiment-page .form-group { min-width: auto; width: 100%; }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="sentiment-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- 简洁页面头部 -->
     <div class="page-header">
         <div class="page-title font-serif text-retro-heading">
@@ -288,42 +145,40 @@ body {
     </div>
 
     <!-- 主要趋势图表 -->
-    <div class="chart-container card-retro p-4">
-        <div class="chart-title font-serif text-retro-heading">
-            <i class="fas fa-chart-line"></i>
-            情感趋势分析
+    <div class="chart-container card-retro p-4 flex flex-col" style="height: 400px;">
+        <div class="chart-title font-serif text-retro-heading flex-shrink-0 mb-3">情感趋势分析</div>
+        <div class="flex-1 min-h-0 relative">
+            <canvas id="trendChart"></canvas>
         </div>
-        <canvas id="trendChart"></canvas>
     </div>
 
     <!-- 平台项目趋势分析 -->
-    <div class="chart-container card-retro p-4">
-        <div class="chart-title font-serif text-retro-heading">
-            <i class="fas fa-chart-bar"></i>
-            平台项目趋势分析
-        </div>
-        
-        <!-- 平台趋势图表 -->
-        <div style="margin-bottom: 30px; height: 350px;">
-            <h5 style="color: var(--primary-blue); margin-bottom: 15px;">平台数据增长趋势</h5>
-            <canvas id="platformTrendChart"></canvas>
-        </div>
-        
-        <!-- 项目趋势图表 -->
-        <div style="height: 350px;">
-            <h5 style="color: var(--primary-blue); margin-bottom: 15px;">热门项目趋势分析</h5>
-            <canvas id="projectTrendChart"></canvas>
+    <div class="card-retro p-4 mb-4">
+        <div class="chart-title font-serif text-retro-heading mb-3">平台项目趋势分析</div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div class="flex flex-col" style="height: 350px;">
+                <h5 class="text-blue-600 font-semibold mb-2 flex-shrink-0">平台数据增长趋势</h5>
+                <div class="flex-1 min-h-0 relative">
+                    <canvas id="platformTrendChart"></canvas>
+                </div>
+            </div>
+            <div class="flex flex-col" style="height: 350px;">
+                <h5 class="text-blue-600 font-semibold mb-2 flex-shrink-0">热门项目趋势分析</h5>
+                <div class="flex-1 min-h-0 relative">
+                    <canvas id="projectTrendChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- 平台数据表格 -->
-    <div class="data-card">
+    <div class="data-card card-retro p-4 mb-4">
         <div class="card-title">
             <i class="fas fa-table"></i>
             平台数据统计
         </div>
-        <div style="overflow-x: auto;">
-            <table class="data-table">
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 50vh;">
+            <table class="data-table min-w-full divide-y divide-gray-200">
                 <thead>
                     <tr>
                         <th>平台名称</th>
@@ -339,9 +194,9 @@ body {
                     <tr>
                         <td><strong>{{ stat.source_c }}</strong></td>
                         <td>{{ stat.total }}</td>
-                        <td class="text-success">{{ stat.positive }}</td>
-                        <td class="text-danger">{{ stat.negative }}</td>
-                        <td class="text-info">{{ stat.neutral }}</td>
+                        <td class="text-green-600 font-medium">{{ stat.positive }}</td>
+                        <td class="text-red-600 font-medium">{{ stat.negative }}</td>
+                        <td class="text-blue-600 font-medium">{{ stat.neutral }}</td>
                         <td>{{ stat.avg_rating|floatformat:1 }}</td>
                     </tr>
                     {% endfor %}
@@ -351,13 +206,13 @@ body {
     </div>
 
     <!-- 项目数据表格 -->
-    <div class="data-card">
+    <div class="data-card card-retro p-4 mb-4">
         <div class="card-title">
             <i class="fas fa-list"></i>
             热门项目排行
         </div>
-        <div style="overflow-x: auto;">
-            <table class="data-table">
+        <div class="overflow-x-auto overflow-y-auto" style="max-height: 50vh;">
+            <table class="data-table min-w-full divide-y divide-gray-200">
                 <thead>
                     <tr>
                         <th>项目名称</th>
@@ -372,9 +227,9 @@ body {
                         <td><strong>{{ stat.poiName|truncatechars:30 }}</strong></td>
                         <td>{{ stat.total }}</td>
                         <td>
-                            <span style="color: #4caf50;">正面{{ stat.positive }}</span> | 
-                            <span style="color: #f44336;">负面{{ stat.negative }}</span> | 
-                            <span style="color: #2196f3;">中性{{ stat.neutral }}</span>
+                            <span class="text-green-600">正面{{ stat.positive }}</span> | 
+                            <span class="text-red-600">负面{{ stat.negative }}</span> | 
+                            <span class="text-blue-600">中性{{ stat.neutral }}</span>
                         </td>
                         <td>{{ stat.avg_rating|floatformat:1 }}</td>
                     </tr>
