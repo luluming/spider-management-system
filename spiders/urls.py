@@ -8,6 +8,7 @@ urlpatterns = [
     path('get-platform-project-daily-trends/', views.get_platform_project_daily_trends, name='get_platform_project_daily_trends'),
     path('comments/', views.comments_list, name='comments_list'),
     path('comment-anomaly-check/', views.comment_anomaly_check, name='comment_anomaly_check'),
+    path('batch-update-comments/', views.batch_update_comments, name='batch_update_comments'),
     path('get-projects/', views.get_projects, name='get_projects'),
     path('get-statistics/', views.get_statistics, name='get_statistics'),
     path('export/', views.export_data, name='export_data'),

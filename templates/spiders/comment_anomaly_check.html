@@ -89,6 +89,12 @@
             <i class="fas fa-list mr-2"></i>
             异常数据列表
         </h5>
+        <div id="batch-action-bar" class="hidden items-center gap-2">
+            <span class="text-sm text-gray-600"><span id="batch-count">0</span> 条已选</span>
+            <button type="button" class="px-3 py-1.5 text-sm rounded border border-blue-300 text-blue-600 hover:bg-blue-50 btn-batch-time" title="批量修改时间"><i class="fas fa-clock mr-1"></i>批量改时间</button>
+            <button type="button" class="px-3 py-1.5 text-sm rounded border border-blue-300 text-blue-600 hover:bg-blue-50 btn-batch-grade" title="批量修改评分"><i class="fas fa-star mr-1"></i>批量改评分</button>
+            <button type="button" class="px-3 py-1.5 text-sm rounded border border-red-300 text-red-600 hover:bg-red-50 btn-batch-delete" title="批量删除"><i class="fas fa-trash mr-1"></i>批量删除</button>
+        </div>
     </div>
     <div id="anomaly-list">
         {% include 'spiders/comment_anomaly_content.html' %}
@@ -96,11 +102,158 @@
 </div>
 </div>
 
+<!-- 批量修改时间弹窗 -->
+<div id="modal-batch-time" class="fixed inset-0 z-50 hidden" style="background: rgba(0,0,0,0.5);">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h4 class="text-lg font-semibold mb-4">批量修改发布时间</h4>
+            <p class="text-sm text-gray-500 mb-2">将选中记录的发布时间统一修改为：</p>
+            <input type="datetime-local" id="batch-time-value" class="w-full border rounded px-3 py-2 mb-4">
+            <div class="flex justify-end gap-2">
+                <button type="button" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50 modal-cancel">取消</button>
+                <button type="button" class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 btn-batch-time-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量修改评分弹窗 -->
+<div id="modal-batch-grade" class="fixed inset-0 z-50 hidden" style="background: rgba(0,0,0,0.5);">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h4 class="text-lg font-semibold mb-4">批量修改评分</h4>
+            <p class="text-sm text-gray-500 mb-2">将选中记录的评分统一修改为：</p>
+            <select id="batch-grade-value" class="w-full border rounded px-3 py-2 mb-4">
+                <option value="">请选择</option>
+                <option value="1">1星</option>
+                <option value="2">2星</option>
+                <option value="3">3星</option>
+                <option value="4">4星</option>
+                <option value="5">5星</option>
+            </select>
+            <div class="flex justify-end gap-2">
+                <button type="button" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50 modal-cancel">取消</button>
+                <button type="button" class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 btn-batch-grade-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量删除确认弹窗 -->
+<div id="modal-batch-delete" class="fixed inset-0 z-50 hidden" style="background: rgba(0,0,0,0.5);">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h4 class="text-lg font-semibold mb-4 text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>批量删除确认</h4>
+            <p class="text-sm text-gray-600 mb-4">确定要删除选中的 <strong id="batch-delete-count">0</strong> 条记录吗？此操作不可恢复。</p>
+            <div class="flex justify-end gap-2">
+                <button type="button" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50 modal-cancel">取消</button>
+                <button type="button" class="px-4 py-2 rounded bg-red-500 text-white hover:bg-red-600 btn-batch-delete-confirm">确定删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('filter-form');
     var platformEl = document.getElementById('platform');
     var projectSelect = document.getElementById('project');
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrf = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    function getSelectedIds() {
+        var ids = [];
+        document.querySelectorAll('.batch-checkbox:checked').forEach(function(cb) { ids.push(cb.value); });
+        return ids;
+    }
+    function updateBatchBar() {
+        var ids = getSelectedIds();
+        var bar = document.getElementById('batch-action-bar');
+        var countEl = document.getElementById('batch-count');
+        if (bar && countEl) {
+            countEl.textContent = ids.length;
+            bar.classList.toggle('hidden', ids.length === 0);
+            bar.classList.toggle('flex', ids.length > 0);
+        }
+        var selectAll = document.getElementById('batch-select-all');
+        if (selectAll) {
+            var total = document.querySelectorAll('.batch-checkbox').length;
+            selectAll.checked = total > 0 && ids.length === total;
+            selectAll.indeterminate = ids.length > 0 && ids.length < total;
+        }
+    }
+
+    document.getElementById('anomaly-list').addEventListener('change', function(e) {
+        if (e.target.classList.contains('batch-checkbox') || e.target.classList.contains('batch-select-all')) {
+            if (e.target.classList.contains('batch-select-all')) {
+                document.querySelectorAll('.batch-checkbox').forEach(function(cb) { cb.checked = e.target.checked; });
+            }
+            updateBatchBar();
+        }
+    });
+
+    document.querySelectorAll('.modal-cancel').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#modal-batch-time, #modal-batch-grade, #modal-batch-delete').forEach(function(m) { m.classList.add('hidden'); });
+        });
+    });
+
+    document.querySelector('.btn-batch-time').addEventListener('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('请先勾选要处理的记录'); return; }
+        document.getElementById('batch-time-value').value = new Date().toISOString().slice(0, 16);
+        document.getElementById('modal-batch-time').classList.remove('hidden');
+    });
+    document.querySelector('.btn-batch-grade').addEventListener('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('请先勾选要处理的记录'); return; }
+        document.getElementById('batch-grade-value').value = '';
+        document.getElementById('modal-batch-grade').classList.remove('hidden');
+    });
+    document.querySelector('.btn-batch-delete').addEventListener('click', function() {
+        var ids = getSelectedIds();
+        if (ids.length === 0) { alert('请先勾选要处理的记录'); return; }
+        document.getElementById('batch-delete-count').textContent = ids.length;
+        document.getElementById('modal-batch-delete').classList.remove('hidden');
+    });
+
+    function doBatch(action, newValue) {
+        var ids = getSelectedIds();
+        if (ids.length === 0) return Promise.reject('无选中记录');
+        return fetch('{% url "batch_update_comments" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ comment_ids: ids, action: action, new_value: newValue })
+        }).then(function(r) { return r.json(); });
+    }
+
+    document.querySelector('.btn-batch-time-confirm').addEventListener('click', function() {
+        var val = document.getElementById('batch-time-value').value;
+        if (!val) { alert('请选择时间'); return; }
+        var dt = val + ':00';  // datetime-local gives YYYY-MM-DDTHH:mm, add :00 for seconds
+        dt = dt.replace('T', ' ');
+        doBatch('modify_time', dt).then(function(res) {
+            document.getElementById('modal-batch-time').classList.add('hidden');
+            alert(res.success ? res.message : (res.message || '操作失败'));
+            if (res.success && form) form.dispatchEvent(new Event('submit'));
+        }).catch(function() { alert('请求失败'); });
+    });
+    document.querySelector('.btn-batch-grade-confirm').addEventListener('click', function() {
+        var val = document.getElementById('batch-grade-value').value;
+        if (!val) { alert('请选择评分'); return; }
+        doBatch('modify_grade', val).then(function(res) {
+            document.getElementById('modal-batch-grade').classList.add('hidden');
+            alert(res.success ? res.message : (res.message || '操作失败'));
+            if (res.success && form) form.dispatchEvent(new Event('submit'));
+        }).catch(function() { alert('请求失败'); });
+    });
+    document.querySelector('.btn-batch-delete-confirm').addEventListener('click', function() {
+        doBatch('delete', null).then(function(res) {
+            document.getElementById('modal-batch-delete').classList.add('hidden');
+            alert(res.success ? res.message : (res.message || '操作失败'));
+            if (res.success && form) form.dispatchEvent(new Event('submit'));
+        }).catch(function() { alert('请求失败'); });
+    });
 
     if (platformEl) {
         platformEl.addEventListener('change', function() {
@@ -140,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
                     document.getElementById('anomaly-list').innerHTML = html;
+                    updateBatchBar();
                 });
         });
     }
@@ -156,8 +310,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(function(html) {
                 if (html.indexOf('用户登录') !== -1) { window.location.href = '{% url "login" %}'; return; }
                 document.getElementById('anomaly-list').innerHTML = html;
+                updateBatchBar();
             });
     });
+
+    updateBatchBar();
 });
 </script>
 {% endblock %}

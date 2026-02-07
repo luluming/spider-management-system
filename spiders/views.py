@@ -732,6 +732,91 @@ def comment_anomaly_check(request):
     return render(request, 'spiders/comment_anomaly_check.html', context)
 
 
+@login_required
+def batch_update_comments(request):
+    """批量修改或删除评论 - 用于异常数据批量处理"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': '无效的请求方法'})
+    try:
+        import json
+        data = json.loads(request.body.decode('utf-8')) if request.body else {}
+        comment_ids = data.get('comment_ids', [])
+        action = data.get('action')  # modify_time, modify_grade, delete
+        new_value = data.get('new_value')
+
+        if not comment_ids:
+            return JsonResponse({'success': False, 'message': '请选择要处理的记录'})
+        if len(comment_ids) > 500:
+            return JsonResponse({'success': False, 'message': '单次最多处理500条'})
+
+        valid_poi_ids = PSentiment.objects.values_list('poiId', flat=True).distinct()
+        queryset = QusetAnswer.objects.filter(comment_id__in=comment_ids, poiId__in=valid_poi_ids)
+
+        if action == 'delete':
+            count = queryset.count()
+            queryset.delete()
+            OperationLog.objects.create(
+                user=request.user,
+                operation='批量删除异常评论',
+                action='delete',
+                target='评论数据',
+                description=f'批量删除{count}条异常评论',
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            return JsonResponse({'success': True, 'message': f'已删除{count}条记录'})
+
+        if action == 'modify_time':
+            if not new_value:
+                return JsonResponse({'success': False, 'message': '请填写新的时间'})
+            try:
+                from datetime import datetime
+                dt = datetime.strptime(new_value, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                try:
+                    dt = datetime.strptime(new_value, '%Y-%m-%d')
+                except ValueError:
+                    return JsonResponse({'success': False, 'message': '时间格式错误，请使用 YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS'})
+            count = queryset.update(release_time=timezone.make_aware(dt) if timezone.is_naive(dt) else dt)
+            OperationLog.objects.create(
+                user=request.user,
+                operation='批量修改评论时间',
+                action='update',
+                target='评论数据',
+                description=f'批量修改{count}条评论的发布时间为{new_value}',
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            return JsonResponse({'success': True, 'message': f'已修改{count}条记录的时间'})
+
+        if action == 'modify_grade':
+            if new_value is None or new_value == '':
+                return JsonResponse({'success': False, 'message': '请选择新的评分'})
+            try:
+                grade_num = float(new_value)
+                if grade_num < 1 or grade_num > 5:
+                    return JsonResponse({'success': False, 'message': '评分需在1-5之间'})
+            except (TypeError, ValueError):
+                return JsonResponse({'success': False, 'message': '评分格式错误'})
+            count = queryset.update(comment_grade=grade_num)
+            OperationLog.objects.create(
+                user=request.user,
+                operation='批量修改评论评分',
+                action='update',
+                target='评论数据',
+                description=f'批量修改{count}条评论的评分为{grade_num}',
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')
+            )
+            return JsonResponse({'success': True, 'message': f'已修改{count}条记录的评分'})
+
+        return JsonResponse({'success': False, 'message': '未知操作类型'})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': '请求数据格式错误'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
 @csrf_exempt
 @login_required
 def get_projects(request):
