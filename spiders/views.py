@@ -2901,6 +2901,53 @@ def add_comment(request):
 
 
 @login_required
+def get_comment_detail(request, comment_id):
+    """获取评论详情（JSON，用于编辑弹窗）"""
+    try:
+        comment = QusetAnswer.objects.get(comment_id=comment_id)
+    except QusetAnswer.DoesNotExist:
+        return JsonResponse({'success': False, 'message': '评论不存在'})
+    try:
+        projects = list(SpiderBase.objects.exclude(poid__isnull=True).order_by('IteamName').values('poid', 'IteamName', 'SalesChannel'))
+    except Exception:
+        projects = []
+    release_str = ''
+    if comment.release_time:
+        try:
+            release_str = comment.release_time.strftime('%Y-%m-%dT%H:%M')
+        except (ValueError, TypeError):
+            release_str = ''
+    grade = comment.comment_grade
+    try:
+        grade_int = int(float(grade)) if grade is not None else None
+    except (TypeError, ValueError):
+        grade_int = None
+    projects_data = []
+    for p in projects:
+        try:
+            projects_data.append({
+                'poid': str(p.get('poid', '')),
+                'IteamName': p.get('IteamName') or '',
+                'SalesChannel': p.get('SalesChannel') or '',
+            })
+        except (TypeError, KeyError):
+            continue
+    return JsonResponse({
+        'success': True,
+        'comment': {
+            'comment_id': comment.comment_id,
+            'user_name': comment.user_name or '',
+            'comment_content': comment.comment_content or '',
+            'comment_grade': grade_int,
+            'comment_num': comment.comment_num or 0,
+            'poiId': str(comment.poiId) if comment.poiId else '',
+            'release_time': release_str,
+        },
+        'projects': projects_data
+    })
+
+
+@login_required
 def edit_comment(request, comment_id):
     """编辑评论"""
     try:

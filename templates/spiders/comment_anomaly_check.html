@@ -142,6 +142,55 @@
     </div>
 </div>
 
+<!-- 编辑评论弹窗 -->
+<div id="modal-edit-comment" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4" style="background: rgba(0,0,0,0.5);" data-modal>
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6" onclick="event.stopPropagation()">
+            <h4 class="text-lg font-semibold mb-4"><i class="fas fa-edit mr-2"></i>编辑评论</h4>
+            <form id="form-edit-comment">
+                <input type="hidden" name="comment_id" id="edit-comment-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">用户名 <span class="text-red-500">*</span></label>
+                        <input type="text" name="user_name" id="edit-user-name" class="w-full border rounded px-2 py-2" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">评论数量</label>
+                        <input type="number" name="comment_num" id="edit-comment-num" class="w-full border rounded px-2 py-2" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">评分 <span class="text-red-500">*</span></label>
+                        <select name="comment_grade" id="edit-comment-grade" class="w-full border rounded px-2 py-2" required>
+                            <option value="">请选择</option>
+                            <option value="1">1星</option>
+                            <option value="2">2星</option>
+                            <option value="3">3星</option>
+                            <option value="4">4星</option>
+                            <option value="5">5星</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">项目 <span class="text-red-500">*</span></label>
+                        <select name="poi_id" id="edit-poi-id" class="w-full border rounded px-2 py-2" required>
+                            <option value="">请选择项目</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">评论内容 <span class="text-red-500">*</span></label>
+                    <textarea name="comment_content" id="edit-comment-content" class="w-full border rounded px-2 py-2" rows="4" required></textarea>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">发布时间 <span class="text-red-500">*</span></label>
+                    <input type="datetime-local" name="release_time" id="edit-release-time" class="w-full border rounded px-2 py-2" required step="1">
+                </div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <button type="button" class="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50 modal-cancel">取消</button>
+                    <button type="submit" class="px-4 py-2 rounded bg-blue-500 text-white hover:bg-blue-600"><i class="fas fa-save mr-1"></i>保存</button>
+                </div>
+            </form>
+    </div>
+</div>
+
 <!-- 批量删除确认弹窗 -->
 <div id="modal-batch-delete" class="fixed inset-0 z-50 hidden" style="background: rgba(0,0,0,0.5);">
     <div class="flex items-center justify-center min-h-screen p-4">
@@ -197,8 +246,70 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.querySelectorAll('.modal-cancel').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('#modal-batch-time, #modal-batch-grade, #modal-batch-delete').forEach(function(m) { m.classList.add('hidden'); });
+            document.querySelectorAll('#modal-batch-time, #modal-batch-grade, #modal-batch-delete, #modal-edit-comment').forEach(function(m) { m.classList.add('hidden'); });
         });
+    });
+
+    document.getElementById('modal-edit-comment').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.add('hidden');
+    });
+
+    document.getElementById('anomaly-list').addEventListener('click', function(e) {
+        var btn = e.target.closest('.btn-edit-comment');
+        if (!btn) return;
+        e.preventDefault();
+        var commentId = btn.dataset.commentId;
+        if (!commentId) return;
+        var detailUrl = '{% url "get_comment_detail" "PLACEHOLDER" %}'.replace('PLACEHOLDER', encodeURIComponent(commentId));
+        fetch(detailUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+            .then(function(r) {
+                var ct = r.headers.get('Content-Type') || '';
+                if (ct.indexOf('application/json') === -1) {
+                    if (r.status === 302 || r.status === 401) { window.location.href = '{% url "login" %}'; return Promise.reject('redirect'); }
+                    return Promise.reject('非JSON响应');
+                }
+                return r.json();
+            })
+            .then(function(res) {
+                if (!res || !res.success || !res.comment) { alert(res && res.message ? res.message : '加载失败'); return; }
+                var c = res.comment;
+                document.getElementById('edit-comment-id').value = c.comment_id;
+                document.getElementById('edit-user-name').value = c.user_name;
+                document.getElementById('edit-comment-num').value = c.comment_num;
+                document.getElementById('edit-comment-grade').value = c.comment_grade || '';
+                document.getElementById('edit-comment-content').value = c.comment_content;
+                document.getElementById('edit-release-time').value = c.release_time;
+                var poiSelect = document.getElementById('edit-poi-id');
+                poiSelect.innerHTML = '<option value="">请选择项目</option>';
+                (res.projects || []).forEach(function(p) {
+                    var opt = document.createElement('option');
+                    opt.value = p.poid;
+                    opt.textContent = (p.IteamName || '') + ' (' + (p.SalesChannel || '') + ')';
+                    opt.selected = (p.poid === c.poiId || String(p.poid) === String(c.poiId));
+                    poiSelect.appendChild(opt);
+                });
+                document.getElementById('modal-edit-comment').classList.remove('hidden');
+            }).catch(function(err) { if (err !== 'redirect') alert('加载失败: ' + (err && err.message ? err.message : '请检查网络或稍后重试')); });
+    });
+
+    document.getElementById('form-edit-comment').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var commentId = document.getElementById('edit-comment-id').value;
+        var formData = new FormData(this);
+        formData.append('csrfmiddlewaretoken', csrf);
+        fetch('/edit-comment/' + encodeURIComponent(commentId) + '/', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': csrf, 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(r) { return r.json(); }).then(function(res) {
+            if (res.success) {
+                alert('更新成功');
+                document.getElementById('modal-edit-comment').classList.add('hidden');
+                if (form) form.dispatchEvent(new Event('submit'));
+            } else {
+                alert(res.message || '更新失败');
+            }
+        }).catch(function() { alert('更新失败'); });
     });
 
     document.querySelector('.btn-batch-time').addEventListener('click', function() {
