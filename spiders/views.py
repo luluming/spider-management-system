@@ -683,10 +683,20 @@ def comment_anomaly_check(request):
         else:
             queryset = queryset.none()
 
-    # 异常类型筛选（至少选一种，否则显示全部异常）
+    # 异常分类筛选：category=time_abnormal | rating_1 | negative | ''(全部)
     now = timezone.now()
     current_year = now.year
-    if anomaly_types:
+    category = request.GET.get('category', '')
+    base_anomaly = Q(comment_grade__lte=2) | Q(release_time__year__gt=current_year) | Q(release_time__gt=now)
+    queryset = queryset.filter(base_anomaly)
+
+    if category == 'time_abnormal':
+        queryset = queryset.filter(Q(release_time__year__gt=current_year) | Q(release_time__gt=now))
+    elif category == 'rating_1':
+        queryset = queryset.filter(Q(comment_grade=1) | Q(comment_grade=1.0))
+    elif category == 'negative':
+        queryset = queryset.filter(Q(comment_grade__lte=2) & ~Q(comment_grade=1) & ~Q(comment_grade=1.0))  # 2星差评
+    elif anomaly_types:
         q_anomaly = Q()
         if 'rating_1' in anomaly_types:
             q_anomaly |= Q(comment_grade=1) | Q(comment_grade=1.0)
@@ -696,14 +706,25 @@ def comment_anomaly_check(request):
             q_anomaly |= Q(release_time__year__gt=current_year) | Q(release_time__gt=now)
         if q_anomaly:
             queryset = queryset.filter(q_anomaly)
-    else:
-        # 默认显示所有异常类型：差评(≤2星)、时间异常
-        queryset = queryset.filter(
-            Q(comment_grade__lte=2) |
-            Q(release_time__year__gt=current_year) | Q(release_time__gt=now)
-        )
 
     queryset = queryset.order_by('-release_time')
+
+    # 分类统计（在当前平台/项目筛选下的数量）
+    base_qs = QusetAnswer.objects.filter(poiId__in=valid_poi_ids)
+    if platform or project:
+        sentiment_filter = PSentiment.objects.all()
+        if platform:
+            sentiment_filter = sentiment_filter.filter(source_c=platform)
+        if project:
+            sentiment_filter = sentiment_filter.filter(title__icontains=project)
+        fpids = list(sentiment_filter.values_list('poiId', flat=True))
+        base_qs = base_qs.filter(poiId__in=fpids) if fpids else base_qs.none()
+    base_anomaly_qs = base_qs.filter(base_anomaly)
+    stats = {
+        'time_abnormal': base_anomaly_qs.filter(Q(release_time__year__gt=current_year) | Q(release_time__gt=now)).count(),
+        'rating_1': base_anomaly_qs.filter(Q(comment_grade=1) | Q(comment_grade=1.0)).count(),
+        'negative': base_anomaly_qs.filter(Q(comment_grade__lte=2) & ~Q(comment_grade=1) & ~Q(comment_grade=1.0)).count(),
+    }
 
     paginator = Paginator(queryset, page_size)
     page_number = request.GET.get('page', 1)
@@ -718,9 +739,11 @@ def comment_anomaly_check(request):
         'page_obj': page_obj,
         'platforms': platforms,
         'projects': projects,
+        'stats': stats,
         'current_filters': {
             'platform': platform,
             'project': project,
+            'category': category,
             'anomaly_types': anomaly_types,
             'page_size': page_size,
         }
@@ -2887,19 +2910,29 @@ def edit_comment(request, comment_id):
     
     if request.method == 'POST':
         try:
+            from datetime import datetime
             # 更新评论数据
             comment.user_name = request.POST.get('user_name', comment.user_name)
             comment.comment_content = request.POST.get('comment_content', comment.comment_content)
             comment.comment_grade = request.POST.get('comment_grade', comment.comment_grade)
             comment.comment_num = request.POST.get('comment_num', comment.comment_num)
-            
+
+            # 发布时间
+            release_time_str = request.POST.get('release_time')
+            if release_time_str:
+                try:
+                    dt = datetime.strptime(release_time_str.replace('T', ' '), '%Y-%m-%d %H:%M')
+                    comment.release_time = timezone.make_aware(dt) if timezone.is_naive(dt) else dt
+                except (ValueError, TypeError):
+                    pass
+
             # 如果poi_id有变化，验证新ID是否存在
             new_poi_id = request.POST.get('poi_id')
             if new_poi_id and new_poi_id != str(comment.poiId):
                 if not SpiderBase.objects.filter(poid=new_poi_id).exists():
                     return JsonResponse({'success': False, 'message': '项目ID不存在'})
                 comment.poiId = new_poi_id
-            
+
             comment.save()
             
             return JsonResponse({'success': True, 'message': '评论更新成功'})

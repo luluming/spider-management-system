@@ -69,4 +69,17 @@ def anomaly_labels(comment):
     return labels
 
 
+@register.filter
+def anomaly_primary_category(comment):
+    """返回评论的主异常分类（单一显示，便于分类查询）：时间异常 > 1分 > 差评"""
+    labels = anomaly_labels(comment)
+    if '时间异常' in labels:
+        return '时间异常'
+    if '1分' in labels:
+        return '1分'
+    if '差评' in labels:
+        return '差评'
+    return ''
+
+
 

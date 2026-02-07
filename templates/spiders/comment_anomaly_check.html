@@ -50,21 +50,13 @@
                 </select>
             </div>
             <div class="sm:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">异常类型</label>
-                <div class="flex flex-wrap gap-2">
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" name="anomaly_type" value="rating_1" {% if 'rating_1' in current_filters.anomaly_types %}checked{% endif %} class="rounded border-gray-300">
-                        <span class="ml-1 text-sm">1分评分</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" name="anomaly_type" value="negative" {% if 'negative' in current_filters.anomaly_types %}checked{% endif %} class="rounded border-gray-300">
-                        <span class="ml-1 text-sm">差评(≤2星)</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="checkbox" name="anomaly_type" value="time_abnormal" {% if 'time_abnormal' in current_filters.anomaly_types %}checked{% endif %} class="rounded border-gray-300">
-                        <span class="ml-1 text-sm">时间异常</span>
-                    </label>
-                </div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">异常分类</label>
+                <select name="category" class="border rounded px-2 py-1 w-full">
+                    <option value="">全部异常</option>
+                    <option value="time_abnormal" {% if current_filters.category == 'time_abnormal' %}selected{% endif %}>时间异常</option>
+                    <option value="rating_1" {% if current_filters.category == 'rating_1' %}selected{% endif %}>1分评分</option>
+                    <option value="negative" {% if current_filters.category == 'negative' %}selected{% endif %}>差评(2星)</option>
+                </select>
             </div>
             <div class="sm:col-span-1">
                 <label for="page_size" class="block text-sm font-medium text-gray-700">每页</label>
@@ -81,6 +73,17 @@
             <a href="{% url 'comment_anomaly_check' %}" class="px-4 py-2 text-sm font-medium rounded-lg border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 inline-flex items-center"><i class="fas fa-undo mr-2"></i>重置</a>
         </div>
     </form>
+</div>
+
+<!-- 分类统计快捷筛选 -->
+<div class="card-retro p-3 mb-4">
+    <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm text-gray-500 mr-2">分类统计：</span>
+        <a href="?category=&platform={{ current_filters.platform|default:'' }}&project={{ current_filters.project|default:'' }}&page_size={{ current_filters.page_size }}" class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium {% if not current_filters.category %}bg-blue-500 text-white{% else %}bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100{% endif %}">全部</a>
+        <a href="?category=time_abnormal&platform={{ current_filters.platform|default:'' }}&project={{ current_filters.project|default:'' }}&page_size={{ current_filters.page_size }}" class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium {% if current_filters.category == 'time_abnormal' %}bg-indigo-500 text-white{% else %}badge-time hover:bg-indigo-100{% endif %}">时间异常 <span class="ml-1 font-semibold">{{ stats.time_abnormal }}</span></a>
+        <a href="?category=rating_1&platform={{ current_filters.platform|default:'' }}&project={{ current_filters.project|default:'' }}&page_size={{ current_filters.page_size }}" class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium {% if current_filters.category == 'rating_1' %}bg-amber-500 text-white{% else %}badge-rating-1 hover:bg-amber-100{% endif %}">1分评分 <span class="ml-1 font-semibold">{{ stats.rating_1 }}</span></a>
+        <a href="?category=negative&platform={{ current_filters.platform|default:'' }}&project={{ current_filters.project|default:'' }}&page_size={{ current_filters.page_size }}" class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium {% if current_filters.category == 'negative' %}bg-red-500 text-white{% else %}badge-negative hover:bg-red-100{% endif %}">差评(2星) <span class="ml-1 font-semibold">{{ stats.negative }}</span></a>
+    </div>
 </div>
 
 <div class="card-retro p-4">

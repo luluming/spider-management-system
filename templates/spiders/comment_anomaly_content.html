@@ -6,7 +6,7 @@
                 <th class="px-2 py-3 text-left">
                     <input type="checkbox" id="batch-select-all" class="rounded border-gray-300 batch-select-all" title="全选本页">
                 </th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">异常类型</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">异常分类</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户名</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">项目</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">平台</th>
@@ -23,12 +23,14 @@
                     <input type="checkbox" class="batch-checkbox rounded border-gray-300" value="{{ comment.comment_id }}" name="batch_comment">
                 </td>
                 <td class="px-4 py-3">
-                    {% for label in comment|anomaly_labels %}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mr-1
-                        {% if label == '1分' %}badge-rating-1{% elif label == '差评' %}badge-negative{% else %}badge-time{% endif %}">{{ label }}</span>
-                    {% empty %}
+                    {% with primary=comment|anomaly_primary_category %}
+                    {% if primary %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                        {% if primary == '1分' %}badge-rating-1{% elif primary == '差评' %}badge-negative{% else %}badge-time{% endif %}">{{ primary }}</span>
+                    {% else %}
                     <span class="text-gray-400">-</span>
-                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
                 </td>
                 <td class="px-4 py-3 text-sm">{{ comment.user_name|default:"-" }}</td>
                 <td class="px-4 py-3 text-sm">{{ comment.project_title|default:"未知" }}</td>
