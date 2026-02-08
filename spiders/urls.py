@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/mobile/login/', views.mobile_api_login, name='mobile_api_login'),
     path('api/mobile/user-projects/', views.mobile_api_user_projects, name='mobile_api_user_projects'),
     path('add-comment/', views.add_comment, name='add_comment'),
+    path('get-comment-detail/<str:comment_id>/', views.get_comment_detail, name='get_comment_detail'),
     path('edit-comment/<str:comment_id>/', views.edit_comment, name='edit_comment'),
     path('delete-comment/<str:comment_id>/', views.delete_comment, name='delete_comment'),
     path('get-platform-data/', views.get_platform_data, name='get_platform_data'),
@@ -53,9 +54,11 @@ urlpatterns = [
     # 基础表查询模块
     path('basic-table-query/', views.basic_table_query, name='basic_table_query'),
     path('add-sentiment-record/', views.add_sentiment_record, name='add_sentiment_record'),
-    path('edit-sentiment-record/<str:poi_id>/', views.edit_sentiment_record, name='edit_sentiment_record'),
-    path('delete-sentiment-record/<str:poi_id>/', views.delete_sentiment_record, name='delete_sentiment_record'),
-    path('get-sentiment-record-detail/<str:poi_id>/', views.get_sentiment_record_detail, name='get_sentiment_record_detail'),
+    path('edit-sentiment-record/<path:poi_id>/', views.edit_sentiment_record, name='edit_sentiment_record'),
+    path('update-sentiment-record/', views.update_sentiment_record, name='update_sentiment_record'),
+    path('delete-sentiment-record/<path:poi_id>/', views.delete_sentiment_record, name='delete_sentiment_record'),
+    path('get-sentiment-record-detail/<path:poi_id>/', views.get_sentiment_record_detail, name='get_sentiment_record_detail'),
+    path('get-sentiment-record-for-edit/', views.get_sentiment_record_for_edit, name='get_sentiment_record_for_edit'),
     path('export-sentiment-data/', views.export_sentiment_data, name='export_sentiment_data'),
 ]
 

@@ -27,13 +27,9 @@ urlpatterns = [
     path('', include('spiders.urls')),
 ]
 
-# 开发环境下提供媒体文件服务及静态文件服务（便于调试）
+# 提供媒体文件及静态文件服务（DEBUG 时提供 media，静态文件统一从 STATIC_ROOT 提供）
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    # 在开发环境直接从 STATICFILES_DIRS 提供静态文件，确保 CSS/JS 以正确的 Content-Type 返回
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
-
-# 当 DEBUG=False 且没有前端静态文件服务器时，提供静态文件服务（仅用于临时恢复）
-if not settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# 静态文件从 STATIC_ROOT 提供（需先运行 collectstatic），确保 _tokens.css 等 theme 静态文件正确加载
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

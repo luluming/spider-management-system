@@ -154,25 +154,21 @@
                         <input type="text" name="user_name" id="edit-user-name" class="w-full border rounded px-2 py-2" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">评论数量</label>
-                        <input type="number" name="comment_num" id="edit-comment-num" class="w-full border rounded px-2 py-2" min="0">
-                    </div>
-                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">评分 <span class="text-red-500">*</span></label>
-                        <select name="comment_grade" id="edit-comment-grade" class="w-full border rounded px-2 py-2" required>
-                            <option value="">请选择</option>
-                            <option value="1">1星</option>
-                            <option value="2">2星</option>
-                            <option value="3">3星</option>
-                            <option value="4">4星</option>
-                            <option value="5">5星</option>
-                        </select>
+                        <div class="flex items-center gap-2">
+                            <span id="edit-rating-current" class="text-sm text-gray-600">当前: -</span>
+                            <select name="comment_grade" id="edit-comment-grade" class="flex-1 border rounded px-2 py-2" required>
+                                <option value="">请选择</option>
+                                <option value="好评">好评</option>
+                                <option value="中评">中评</option>
+                                <option value="差评">差评</option>
+                            </select>
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">项目 <span class="text-red-500">*</span></label>
-                        <select name="poi_id" id="edit-poi-id" class="w-full border rounded px-2 py-2" required>
-                            <option value="">请选择项目</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">项目</label>
+                        <input type="text" id="edit-project-title" class="w-full border rounded px-2 py-2 bg-gray-50" readonly>
+                        <input type="hidden" name="poi_id" id="edit-poi-id">
                     </div>
                 </div>
                 <div class="mt-4">
@@ -274,22 +270,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!res || !res.success || !res.comment) { alert(res && res.message ? res.message : '加载失败'); return; }
                 var c = res.comment;
                 document.getElementById('edit-comment-id').value = c.comment_id;
-                document.getElementById('edit-user-name').value = c.user_name;
-                document.getElementById('edit-comment-num').value = c.comment_num;
-                document.getElementById('edit-comment-grade').value = c.comment_grade || '';
-                document.getElementById('edit-comment-content').value = c.comment_content;
-                document.getElementById('edit-release-time').value = c.release_time;
-                var poiSelect = document.getElementById('edit-poi-id');
-                poiSelect.innerHTML = '<option value="">请选择项目</option>';
-                (res.projects || []).forEach(function(p) {
-                    var opt = document.createElement('option');
-                    opt.value = p.poid;
-                    opt.textContent = (p.IteamName || '') + ' (' + (p.SalesChannel || '') + ')';
-                    opt.selected = (p.poid === c.poiId || String(p.poid) === String(c.poiId));
-                    poiSelect.appendChild(opt);
-                });
+                document.getElementById('edit-user-name').value = c.user_name || '';
+                var gradeVal = (c.comment_grade != null && c.comment_grade !== '') ? String(c.comment_grade).trim() : '';
+                var gradeSelect = document.getElementById('edit-comment-grade');
+                gradeSelect.value = (gradeVal === '好评' || gradeVal === '中评' || gradeVal === '差评') ? gradeVal : '';
+                document.getElementById('edit-rating-current').textContent = '当前: ' + (gradeVal || '-');
+                document.getElementById('edit-comment-content').value = c.comment_content || '';
+                document.getElementById('edit-release-time').value = c.release_time || '';
+                document.getElementById('edit-project-title').value = c.project_title || '未知';
+                document.getElementById('edit-poi-id').value = c.poiId || '';
                 document.getElementById('modal-edit-comment').classList.remove('hidden');
             }).catch(function(err) { if (err !== 'redirect') alert('加载失败: ' + (err && err.message ? err.message : '请检查网络或稍后重试')); });
+    });
+
+    document.getElementById('edit-comment-grade').addEventListener('change', function() {
+        var v = this.value;
+        document.getElementById('edit-rating-current').textContent = '当前: ' + (v || '-');
     });
 
     document.getElementById('form-edit-comment').addEventListener('submit', function(e) {

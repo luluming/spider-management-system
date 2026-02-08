@@ -45,7 +45,7 @@
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-500">{{ comment.release_time|date:"Y-m-d H:i"|default:"-" }}</td>
                 <td class="px-4 py-3">
-                    <a href="{% url 'edit_comment' comment.comment_id %}" class="inline-flex items-center px-2 py-1 rounded text-sm border border-blue-300 text-blue-600 hover:bg-blue-50 mr-1"><i class="fas fa-edit mr-1"></i>修改</a>
+                    <button type="button" class="inline-flex items-center px-2 py-1 rounded text-sm border border-blue-300 text-blue-600 hover:bg-blue-50 mr-1 btn-edit-comment" data-comment-id="{{ comment.comment_id }}"><i class="fas fa-edit mr-1"></i>修改</button>
                     <button type="button" class="inline-flex items-center px-2 py-1 rounded text-sm border border-red-300 text-red-600 hover:bg-red-50 btn-delete-comment" data-comment-id="{{ comment.comment_id }}"><i class="fas fa-trash mr-1"></i>删除</button>
                 </td>
             </tr>

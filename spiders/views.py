@@ -2900,6 +2900,31 @@ def add_comment(request):
     return render(request, 'spiders/add_comment.html', {'projects': projects})
 
 
+def _grade_to_label(grade):
+    """将评分（数字或字符串）转为好评/差评/中评"""
+    if grade is None:
+        return ''
+    if isinstance(grade, str) and grade in ('好评', '差评', '中评'):
+        return grade
+    try:
+        g = float(grade)
+        if g >= 4:
+            return '好评'
+        if g <= 2:
+            return '差评'
+        return '中评'
+    except (TypeError, ValueError):
+        return str(grade) if grade else ''
+
+
+def _label_to_grade(label):
+    """将好评/差评/中评转为数字存储：好评->5, 中评->3, 差评->1"""
+    if not label:
+        return None
+    m = {'好评': 5, '中评': 3, '差评': 1}
+    return m.get(label)
+
+
 @login_required
 def get_comment_detail(request, comment_id):
     """获取评论详情（JSON，用于编辑弹窗）"""
@@ -2907,10 +2932,6 @@ def get_comment_detail(request, comment_id):
         comment = QusetAnswer.objects.get(comment_id=comment_id)
     except QusetAnswer.DoesNotExist:
         return JsonResponse({'success': False, 'message': '评论不存在'})
-    try:
-        projects = list(SpiderBase.objects.exclude(poid__isnull=True).order_by('IteamName').values('poid', 'IteamName', 'SalesChannel'))
-    except Exception:
-        projects = []
     release_str = ''
     if comment.release_time:
         try:
@@ -2918,32 +2939,25 @@ def get_comment_detail(request, comment_id):
         except (ValueError, TypeError):
             release_str = ''
     grade = comment.comment_grade
+    grade_label = _grade_to_label(grade)
+    project_title = ''
     try:
-        grade_int = int(float(grade)) if grade is not None else None
-    except (TypeError, ValueError):
-        grade_int = None
-    projects_data = []
-    for p in projects:
-        try:
-            projects_data.append({
-                'poid': str(p.get('poid', '')),
-                'IteamName': p.get('IteamName') or '',
-                'SalesChannel': p.get('SalesChannel') or '',
-            })
-        except (TypeError, KeyError):
-            continue
+        ps = PSentiment.objects.filter(poiId=comment.poiId).first()
+        if ps:
+            project_title = (ps.title or ps.itemName or '').strip()
+    except Exception:
+        pass
     return JsonResponse({
         'success': True,
         'comment': {
             'comment_id': comment.comment_id,
             'user_name': comment.user_name or '',
             'comment_content': comment.comment_content or '',
-            'comment_grade': grade_int,
-            'comment_num': comment.comment_num or 0,
+            'comment_grade': grade_label,
             'poiId': str(comment.poiId) if comment.poiId else '',
+            'project_title': project_title,
             'release_time': release_str,
-        },
-        'projects': projects_data
+        }
     })
 
 
@@ -2961,7 +2975,15 @@ def edit_comment(request, comment_id):
             # 更新评论数据
             comment.user_name = request.POST.get('user_name', comment.user_name)
             comment.comment_content = request.POST.get('comment_content', comment.comment_content)
-            comment.comment_grade = request.POST.get('comment_grade', comment.comment_grade)
+            grade_val = request.POST.get('comment_grade', '')
+            grade_num = _label_to_grade(grade_val)
+            if grade_num is not None:
+                comment.comment_grade = grade_num
+            elif grade_val and grade_val.isdigit():
+                try:
+                    comment.comment_grade = float(grade_val)
+                except (TypeError, ValueError):
+                    pass
             comment.comment_num = request.POST.get('comment_num', comment.comment_num)
 
             # 发布时间
@@ -3146,17 +3168,20 @@ def add_sentiment_record(request):
     """添加基础表记录"""
     if request.method == 'POST':
         try:
-            # 获取表单数据
-            poi_id = request.POST.get('poiId', '').strip()
-            source_c = request.POST.get('source_c', '').strip()
-            source_type = request.POST.get('source_type', '').strip()
-            title = request.POST.get('title', '').strip()
-            url = request.POST.get('url', '').strip()
-            comment_num = request.POST.get('comment_num', '0').strip()
-            reply_num = request.POST.get('reply_num', '0').strip()
-            user_id = request.POST.get('user_id', '').strip()
-            itemName = request.POST.get('itemName', '').strip()
-            y_num = request.POST.get('y_num', '').strip()
+            # 获取表单数据，移除 null 字节等非法字符
+            def _sanitize(s):
+                return (s or '').replace('\x00', '').strip()
+
+            poi_id = _sanitize(request.POST.get('poiId', ''))
+            source_c = _sanitize(request.POST.get('source_c', ''))
+            source_type = _sanitize(request.POST.get('source_type', ''))
+            title = _sanitize(request.POST.get('title', ''))
+            url = _sanitize(request.POST.get('url', ''))
+            comment_num = _sanitize(request.POST.get('comment_num', '0')) or '0'
+            reply_num = _sanitize(request.POST.get('reply_num', '0'))
+            user_id = _sanitize(request.POST.get('user_id', ''))
+            itemName = _sanitize(request.POST.get('itemName', ''))
+            y_num = _sanitize(request.POST.get('y_num', ''))
             
             # 验证必填字段
             if not poi_id:
@@ -3175,16 +3200,19 @@ def add_sentiment_record(request):
             except ValueError:
                 return JsonResponse({'success': False, 'message': '评分必须是数字，评论条数必须是整数'})
             
-            # 处理空字符串字段 - 对于字符串字段转为None
+            # 处理空字符串字段（PSentiment 的 CharField 无 null=True，需用空字符串）
+            # 移除 null 字节等非法字符，避免数据库保存失败
             def clean_string_field(value):
-                """清理字符串字段，空字符串转为None"""
-                return value if value else None
+                s = (value or '').strip()
+                if isinstance(s, str):
+                    s = s.replace('\x00', '')
+                return s or ''
             
-            # 处理y_num字段 - 数据库中是整数类型，必须提供有效整数值
+            # y_num 在 DB 中可能为 INT 类型，空字符串会报错
             try:
-                y_num_value = int(y_num) if y_num else 0
-            except ValueError:
-                y_num_value = 0
+                y_num_val = int(y_num) if y_num else 0
+            except (ValueError, TypeError):
+                y_num_val = 0
             
             # 创建新记录
             record = PSentiment.objects.create(
@@ -3195,9 +3223,9 @@ def add_sentiment_record(request):
                 url=clean_string_field(url),
                 comment_num=comment_num_str,  # 评分（保留一位小数的字符串格式，如"4.8"）
                 reply_num=reply_num_int,  # 评论条数
-                user_id=clean_string_field(user_id),
+                user_id=clean_string_field(user_id) or None,  # 空字符串转 None，兼容 DB 中 INT 类型
                 itemName=clean_string_field(itemName),
-                y_num=y_num_value,  # 确保是整数类型
+                y_num=y_num_val,
                 p_time=timezone.now()
             )
             
@@ -3228,8 +3256,91 @@ def add_sentiment_record(request):
 
 
 @login_required
+def update_sentiment_record(request):
+    """更新基础表记录（仅 POST，poiId 从表单 body 获取，避免 URL 路径问题）"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': '无效的请求方法'})
+    
+    poi_id = (request.POST.get('poiId') or '').strip()
+    if not poi_id:
+        return JsonResponse({'success': False, 'message': 'POI ID 不能为空'})
+    
+    try:
+        record = PSentiment.objects.get(poiId=poi_id)
+    except PSentiment.DoesNotExist:
+        return JsonResponse({'success': False, 'message': '记录不存在'})
+    
+    try:
+        # 获取表单数据，移除 null 字节等非法字符
+        def _sanitize(s):
+            return (s or '').replace('\x00', '').strip()
+
+        source_c = _sanitize(request.POST.get('source_c', ''))
+        source_type = _sanitize(request.POST.get('source_type', ''))
+        title = _sanitize(request.POST.get('title', ''))
+        url = _sanitize(request.POST.get('url', ''))
+        comment_num = _sanitize(request.POST.get('comment_num', '0')) or '0'
+        reply_num = _sanitize(request.POST.get('reply_num', '0'))
+        user_id = _sanitize(request.POST.get('user_id', ''))
+        itemName = _sanitize(request.POST.get('itemName', ''))
+        y_num = _sanitize(request.POST.get('y_num', ''))
+        
+        # 验证数值字段
+        try:
+            comment_num_float = float(comment_num) if comment_num else 0.0
+            comment_num_str = f"{round(comment_num_float, 1):.1f}"
+            reply_num_int = int(reply_num) if reply_num else 0
+        except ValueError:
+            return JsonResponse({'success': False, 'message': '评分必须是数字，评论条数必须是整数'})
+        
+        def clean_string_field(value):
+            s = (value or '').strip()
+            if isinstance(s, str):
+                s = s.replace('\x00', '')
+            return s or ''
+        
+        # y_num 在 DB 中可能为 INT 类型，空字符串会报错，转成 0 或 None
+        try:
+            y_num_val = int(y_num) if y_num else 0
+        except (ValueError, TypeError):
+            y_num_val = 0
+        
+        # 更新记录
+        record.source_c = clean_string_field(source_c)
+        record.source_type = clean_string_field(source_type)
+        record.title = clean_string_field(title)
+        record.url = clean_string_field(url)
+        record.comment_num = comment_num_str
+        record.reply_num = reply_num_int
+        record.user_id = clean_string_field(user_id) or None  # 空字符串转 None，兼容 DB 中 INT 类型
+        record.itemName = clean_string_field(itemName)
+        record.y_num = y_num_val
+        record.save()
+        
+        OperationLog.objects.create(
+            user=request.user,
+            operation='编辑基础表记录',
+            action='edit_data',
+            description=f'编辑基础表记录: {poi_id} - {title}',
+            ip_address=get_client_ip(request)
+        )
+        
+        return JsonResponse({'success': True, 'message': '记录更新成功'})
+        
+    except ValueError as e:
+        return JsonResponse({'success': False, 'message': f'数据格式错误: {str(e)}'})
+    except Exception as e:
+        import traceback
+        print(f'更新记录错误: {str(e)}')
+        print(traceback.format_exc())
+        return JsonResponse({'success': False, 'message': f'更新记录失败: {str(e)}'})
+
+
+@login_required
 def edit_sentiment_record(request, poi_id):
-    """编辑基础表记录"""
+    """编辑基础表记录（GET 返回详情，POST 也支持但推荐用 update_sentiment_record）"""
+    poi_id = (poi_id or '').strip().rstrip('/')
+    
     try:
         record = PSentiment.objects.get(poiId=poi_id)
     except PSentiment.DoesNotExist:
@@ -3237,16 +3348,19 @@ def edit_sentiment_record(request, poi_id):
     
     if request.method == 'POST':
         try:
-            # 获取表单数据
-            source_c = request.POST.get('source_c', '').strip()
-            source_type = request.POST.get('source_type', '').strip()
-            title = request.POST.get('title', '').strip()
-            url = request.POST.get('url', '').strip()
-            comment_num = request.POST.get('comment_num', '0').strip()
-            reply_num = request.POST.get('reply_num', '0').strip()
-            user_id = request.POST.get('user_id', '').strip()
-            itemName = request.POST.get('itemName', '').strip()
-            y_num = request.POST.get('y_num', '').strip()
+            # 获取表单数据，移除 null 字节等非法字符
+            def _sanitize(s):
+                return (s or '').replace('\x00', '').strip()
+
+            source_c = _sanitize(request.POST.get('source_c', ''))
+            source_type = _sanitize(request.POST.get('source_type', ''))
+            title = _sanitize(request.POST.get('title', ''))
+            url = _sanitize(request.POST.get('url', ''))
+            comment_num = _sanitize(request.POST.get('comment_num', '0')) or '0'
+            reply_num = _sanitize(request.POST.get('reply_num', '0'))
+            user_id = _sanitize(request.POST.get('user_id', ''))
+            itemName = _sanitize(request.POST.get('itemName', ''))
+            y_num = _sanitize(request.POST.get('y_num', ''))
             
             # 验证数值字段
             try:
@@ -3257,16 +3371,19 @@ def edit_sentiment_record(request, poi_id):
             except ValueError:
                 return JsonResponse({'success': False, 'message': '评分必须是数字，评论条数必须是整数'})
             
-            # 处理空字符串字段
+            # 处理空字符串字段（PSentiment 的 CharField 无 null=True，需用空字符串而非 None）
+            # 移除 null 字节等非法字符，避免数据库保存失败
             def clean_string_field(value):
-                """清理字符串字段，空字符串转为None"""
-                return value if value else None
+                s = (value or '').strip()
+                if isinstance(s, str):
+                    s = s.replace('\x00', '')  # 移除 null 字节
+                return s or ''
             
-            # 处理y_num字段 - 数据库中是整数类型，必须提供有效整数值
+            # y_num 在 DB 中可能为 INT 类型，空字符串会报错
             try:
-                y_num_value = int(y_num) if y_num else 0
-            except ValueError:
-                y_num_value = 0
+                y_num_val = int(y_num) if y_num else 0
+            except (ValueError, TypeError):
+                y_num_val = 0
             
             # 更新记录
             record.source_c = clean_string_field(source_c)
@@ -3275,9 +3392,9 @@ def edit_sentiment_record(request, poi_id):
             record.url = clean_string_field(url)
             record.comment_num = comment_num_str  # 评分（保留一位小数的字符串格式，如"4.8"）
             record.reply_num = reply_num_int  # 评论条数
-            record.user_id = clean_string_field(user_id)
+            record.user_id = clean_string_field(user_id) or None  # 空字符串转 None，兼容 DB 中 INT 类型
             record.itemName = clean_string_field(itemName)
-            record.y_num = y_num_value  # 确保是整数类型
+            record.y_num = y_num_val
             record.save()
             
             # 记录操作日志
@@ -3302,29 +3419,35 @@ def edit_sentiment_record(request, poi_id):
             print(traceback.format_exc())
             return JsonResponse({'success': False, 'message': f'更新记录失败: {str(e)}'})
     
-    # GET请求返回记录详情
-    return JsonResponse({
-        'success': True,
-        'record': {
-            'poiId': record.poiId,
-            'source_c': record.source_c,
-            'source_type': record.source_type,
-            'title': record.title,
-            'url': record.url,
-            'comment_num': record.comment_num,
-            'reply_num': record.reply_num,
-            'user_id': record.user_id,
-            'y_name': record.y_name,
-            'y_num': record.y_num,
-            'itemName': record.itemName if hasattr(record, 'itemName') else None,
-            'p_time': record.p_time.strftime('%Y-%m-%d %H:%M:%S'),
-        }
-    })
+    # GET请求返回记录详情（poiId 必须为字符串，避免 JS 大整数精度丢失；字段需安全序列化）
+    try:
+        return JsonResponse({
+            'success': True,
+            'record': {
+                'poiId': str(record.poiId),
+                'source_c': record.source_c or '',
+                'source_type': record.source_type or '',
+                'title': record.title or '',
+                'url': record.url or '',
+                'comment_num': record.comment_num or '',
+                'reply_num': record.reply_num,
+                'user_id': str(record.user_id) if record.user_id is not None else '',
+                'y_name': record.y_name or '',
+                'y_num': record.y_num or '',
+                'itemName': getattr(record, 'itemName', None) or '',
+                'p_time': record.p_time.strftime('%Y-%m-%d %H:%M:%S') if record.p_time else '',
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': f'序列化记录失败: {str(e)}'})
 
 
 @login_required
 def delete_sentiment_record(request, poi_id):
     """删除情感分析记录"""
+    poi_id = (poi_id or '').strip().rstrip('/')
     if request.method == 'POST':
         try:
             record = PSentiment.objects.get(poiId=poi_id)
@@ -3356,15 +3479,49 @@ def delete_sentiment_record(request, poi_id):
 
 
 @login_required
+def get_sentiment_record_for_edit(request):
+    """获取基础表记录用于编辑（poiId 通过 GET 查询参数传递，避免 URL 路径问题）"""
+    poi_id = (request.GET.get('poiId') or '').strip()
+    if not poi_id:
+        return JsonResponse({'success': False, 'message': 'poiId 不能为空'})
+    try:
+        record = PSentiment.objects.get(poiId=poi_id)
+        return JsonResponse({
+            'success': True,
+            'record': {
+                'poiId': str(record.poiId),
+                'source_c': record.source_c or '',
+                'source_type': record.source_type or '',
+                'title': record.title or '',
+                'url': record.url or '',
+                'comment_num': record.comment_num or '',
+                'reply_num': record.reply_num,
+                'user_id': str(record.user_id) if record.user_id is not None else '',
+                'y_name': record.y_name or '',
+                'y_num': record.y_num or '',
+                'itemName': getattr(record, 'itemName', None) or '',
+                'p_time': record.p_time.strftime('%Y-%m-%d %H:%M:%S') if record.p_time else '',
+            }
+        })
+    except PSentiment.DoesNotExist:
+        return JsonResponse({'success': False, 'message': '记录不存在'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': f'获取记录失败: {str(e)}'})
+
+
+@login_required
 def get_sentiment_record_detail(request, poi_id):
     """获取情感分析记录详情"""
+    poi_id = (poi_id or '').strip().rstrip('/')
     try:
         record = PSentiment.objects.get(poiId=poi_id)
         
         return JsonResponse({
             'success': True,
             'record': {
-                'poiId': record.poiId,
+                'poiId': str(record.poiId),
                 'source_c': record.source_c,
                 'source_type': record.source_type,
                 'title': record.title,

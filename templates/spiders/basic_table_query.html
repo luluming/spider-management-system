@@ -184,7 +184,7 @@
                                 <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded border border-blue-200 bg-white text-blue-600 hover:bg-blue-50" onclick="viewRecord('{{ record.poiId }}')" title="查看详情">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded border border-blue-200 bg-white text-blue-600 hover:bg-blue-50" onclick="editRecord('{{ record.poiId }}')" title="编辑">
+                                <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded border border-blue-200 bg-white text-blue-600 hover:bg-blue-50" onclick="editRecord(this.dataset.poiId)" data-poi-id="{{ record.poiId }}" title="编辑">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded border border-red-200 bg-white text-red-600 hover:bg-red-50" onclick="deleteRecord('{{ record.poiId }}', '{{ record.title|default:record.poiId }}')" title="删除">
@@ -232,10 +232,9 @@
 </div>
 
 <!-- 添加记录模态框 (Tailwind modal) -->
-<div id="addRecordModal" class="hidden fixed inset-0 z-50 items-start overflow-y-auto">
-    <div class="min-h-screen px-4 text-center">
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50" onclick="closeAddRecordModal()"></div>
-        <div class="inline-block align-top bg-white rounded-lg max-w-3xl w-full mt-24 p-6 shadow-lg text-left">
+<div id="addRecordModal" class="hidden fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50" onclick="closeAddRecordModal()"></div>
+    <div class="relative z-10 inline-block align-top bg-white rounded-lg max-w-3xl w-full mt-24 p-6 shadow-lg text-left" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4">
                 <h5 class="text-lg font-semibold"><i class="fas fa-plus mr-2"></i>添加基础表记录</h5>
                 <button onclick="closeAddRecordModal()" class="btn-retro-secondary px-3 py-1 rounded">关闭</button>
@@ -261,7 +260,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label for="add_url" class="block text-sm font-medium text-gray-700">链接</label>
-                        <input type="url" id="add_url" name="url" class="border rounded px-2 py-1 w-full">
+                        <input type="text" id="add_url" name="url" class="border rounded px-2 py-1 w-full" placeholder="支持 http(s):// 或 #小程序:// 等格式">
                     </div>
                     <div>
                         <label for="add_comment_num" class="block text-sm font-medium text-gray-700">评分</label>
@@ -290,14 +289,12 @@
                 </div>
             </form>
         </div>
-    </div>
 </div>
 
 <!-- 编辑记录模态框 (Tailwind modal) -->
-<div id="editRecordModal" class="hidden fixed inset-0 z-50 items-start overflow-y-auto">
-    <div class="min-h-screen px-4 text-center">
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50" onclick="closeEditRecordModal()"></div>
-        <div class="inline-block align-top bg-white rounded-lg max-w-3xl w-full mt-24 p-6 shadow-lg text-left">
+<div id="editRecordModal" class="hidden fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50" onclick="closeEditRecordModal()"></div>
+    <div class="relative z-10 inline-block align-top bg-white rounded-lg max-w-3xl w-full mt-24 p-6 shadow-lg text-left" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4">
                 <h5 class="text-lg font-semibold"><i class="fas fa-edit mr-2"></i>编辑基础表记录</h5>
                 <button onclick="closeEditRecordModal()" class="btn-retro-secondary px-3 py-1 rounded">关闭</button>
@@ -323,7 +320,7 @@
                     </div>
                     <div class="md:col-span-2">
                         <label for="edit_url" class="block text-sm font-medium text-gray-700">链接</label>
-                        <input type="url" id="edit_url" name="url" class="border rounded px-2 py-1 w-full">
+                        <input type="text" id="edit_url" name="url" class="border rounded px-2 py-1 w-full" placeholder="支持 http(s):// 或 #小程序:// 等格式">
                     </div>
                     <div>
                         <label for="edit_comment_num" class="block text-sm font-medium text-gray-700">评分</label>
@@ -352,14 +349,12 @@
                 </div>
             </form>
         </div>
-    </div>
 </div>
 
 <!-- 查看详情模态框 (Tailwind) -->
-<div id="viewRecordModal" class="hidden fixed inset-0 z-50 items-start overflow-y-auto">
-    <div class="min-h-screen px-4 text-center">
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50" onclick="closeViewRecordModal()"></div>
-        <div class="inline-block align-top bg-white rounded-lg max-w-3xl w-full mt-24 p-6 shadow-lg text-left">
+<div id="viewRecordModal" class="hidden fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4">
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50" onclick="closeViewRecordModal()"></div>
+    <div class="relative z-10 inline-block align-top bg-white rounded-lg max-w-3xl w-full mt-24 p-6 shadow-lg text-left" onclick="event.stopPropagation()">
             <div class="flex items-center justify-between mb-4">
                 <h5 class="text-lg font-semibold"><i class="fas fa-eye mr-2"></i>记录详情</h5>
                 <button onclick="closeViewRecordModal()" class="btn-retro-secondary px-3 py-1 rounded">关闭</button>
@@ -369,7 +364,6 @@
                 <button onclick="closeViewRecordModal()" class="btn-retro-secondary px-3 py-1 rounded">关闭</button>
             </div>
         </div>
-    </div>
 </div>
 {% endblock %}
 
@@ -448,33 +442,45 @@ document.getElementById('addRecordForm').addEventListener('submit', function(e) 
     });
 });
 
-// 编辑记录
+// 编辑记录（使用查询参数传递 poiId，避免 URL 路径和大整数精度问题）
 function editRecord(poiId) {
-    fetch(`{% url "edit_sentiment_record" "PLACEHOLDER" %}`.replace('PLACEHOLDER', poiId))
-    .then(response => response.json())
-    .then(data => {
+    if (!poiId) { alert('POI ID 为空'); return; }
+    var url = '{% url "get_sentiment_record_for_edit" %}?poiId=' + encodeURIComponent(String(poiId));
+    fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(function(response) {
+        if (response.redirected && response.url.indexOf('/login') !== -1) {
+            window.location.href = response.url;
+            return Promise.reject('redirect');
+        }
+        var ct = response.headers.get('Content-Type') || '';
+        if (ct.indexOf('application/json') === -1) {
+            return Promise.reject(new Error('服务器返回非JSON响应'));
+        }
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
-            const record = data.record;
-            document.getElementById('edit_poiId').value = record.poiId;
-            document.getElementById('edit_source_c').value = record.source_c || '';
-            document.getElementById('edit_source_type').value = record.source_type || '';
-            document.getElementById('edit_title').value = record.title || '';
-            document.getElementById('edit_url').value = record.url || '';
-            document.getElementById('edit_comment_num').value = record.comment_num || '';
-            document.getElementById('edit_reply_num').value = record.reply_num || '';
-            document.getElementById('edit_user_id').value = record.user_id || '';
-            document.getElementById('edit_itemName').value = record.itemName || '';
-            document.getElementById('edit_y_num').value = record.y_num || '';
-            
-            // 打开编辑模态
+            var record = data.record;
+            document.getElementById('edit_poiId').value = record.poiId || '';
+            document.getElementById('edit_source_c').value = record.source_c != null ? record.source_c : '';
+            document.getElementById('edit_source_type').value = record.source_type != null ? record.source_type : '';
+            document.getElementById('edit_title').value = record.title != null ? record.title : '';
+            document.getElementById('edit_url').value = record.url != null ? record.url : '';
+            document.getElementById('edit_comment_num').value = (record.comment_num !== undefined && record.comment_num !== null && record.comment_num !== '') ? record.comment_num : '';
+            document.getElementById('edit_reply_num').value = (record.reply_num !== undefined && record.reply_num !== null) ? record.reply_num : '';
+            document.getElementById('edit_user_id').value = record.user_id != null ? record.user_id : '';
+            document.getElementById('edit_itemName').value = record.itemName != null ? record.itemName : '';
+            document.getElementById('edit_y_num').value = record.y_num != null ? record.y_num : '';
             openEditRecordModal();
         } else {
-            alert('获取记录信息失败：' + data.message);
+            alert('获取记录信息失败：' + (data.message || '未知错误'));
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('获取记录信息失败，请重试');
+    .catch(function(error) {
+        if (error !== 'redirect') {
+            console.error('Error:', error);
+            alert('获取记录信息失败，请检查网络或登录状态后重试');
+        }
     });
 }
 
@@ -482,12 +488,18 @@ function editRecord(poiId) {
 document.getElementById('editRecordForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const poiId = document.getElementById('edit_poiId').value;
     const formData = new FormData(this);
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]');
     
     if (!csrftoken) {
         alert('错误：无法获取安全令牌，请刷新页面后重试');
+        return;
+    }
+    
+    // 使用专用更新接口，poiId 从表单 body 传递，避免 URL 路径问题
+    const poiId = document.getElementById('edit_poiId').value;
+    if (!poiId) {
+        alert('错误：POI ID 为空');
         return;
     }
     
@@ -497,20 +509,33 @@ document.getElementById('editRecordForm').addEventListener('submit', function(e)
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>更新中...';
     
-    fetch(`{% url "edit_sentiment_record" "PLACEHOLDER" %}`.replace('PLACEHOLDER', poiId), {
+    fetch('{% url "update_sentiment_record" %}', {
         method: 'POST',
         body: formData,
+        credentials: 'same-origin',
         headers: {
-            'X-CSRFToken': csrftoken.value
+            'X-CSRFToken': csrftoken.value,
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => {
+    .then(function(response) {
+        if (response.status === 302 || response.redirected) {
+            var loc = response.headers.get('Location') || response.url || '';
+            if (loc.indexOf('login') !== -1) {
+                window.location.href = loc;
+                return Promise.reject('redirect');
+            }
+        }
         if (!response.ok) {
             throw new Error('网络响应异常');
         }
+        var ct = response.headers.get('Content-Type') || '';
+        if (ct.indexOf('application/json') === -1) {
+            throw new Error('服务器返回非JSON响应');
+        }
         return response.json();
     })
-    .then(data => {
+    .then(function(data) {
         if (data.success) {
             alert('记录更新成功！');
             // 关闭模态框
@@ -523,11 +548,13 @@ document.getElementById('editRecordForm').addEventListener('submit', function(e)
             alert('更新失败：' + (data.message || '未知错误'));
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('更新失败，请检查网络连接或刷新页面后重试');
+    .catch(function(error) {
+        if (error !== 'redirect') {
+            console.error('Error:', error);
+            alert('更新失败，请检查网络连接或刷新页面后重试');
+        }
     })
-    .finally(() => {
+    .finally(function() {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
     });
