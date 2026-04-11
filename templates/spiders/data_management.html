@@ -15,7 +15,7 @@
   <div class="flex items-center justify-between">
     <h2 class="text-xl font-semibold font-serif text-retro-heading"><i class="fas fa-sliders-h mr-2 text-blue-600"></i> 配置管理</h2>
     <div class="flex items-center space-x-2">
-      <button class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors inline-flex items-center" x-on:click="$dispatch('open-add-modal')"><i class="fas fa-plus mr-2"></i> 新增配置</button>
+      <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors inline-flex items-center" onclick="showAddModal()"><i class="fas fa-plus mr-2"></i> 新增配置</button>
       <button class="px-4 py-2 text-sm font-medium rounded-lg border border-blue-200 bg-white text-blue-600 hover:bg-blue-50 transition-colors inline-flex items-center" onclick="refreshData()"><i class="fas fa-sync mr-2"></i> 刷新</button>
     </div>
   </div>
