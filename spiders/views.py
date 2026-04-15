@@ -3099,6 +3099,10 @@ def basic_table_query(request):
         search_source = request.GET.get('search_source', '').strip()
         search_source_type = request.GET.get('search_source_type', '').strip()
         search_user_id = request.GET.get('search_user_id', '').strip()
+        sort_by = request.GET.get('sort_by', '').strip()
+        order = request.GET.get('order', 'desc').strip().lower()
+        if order not in ('asc', 'desc'):
+            order = 'desc'
         
         # 构建查询
         queryset = PSentiment.objects.all()
@@ -3117,8 +3121,23 @@ def basic_table_query(request):
         if search_user_id:
             queryset = queryset.filter(user_id__icontains=search_user_id)
         
-        # 排序
-        queryset = queryset.order_by('-p_time')
+        # 排序：支持按评分(comment_num)、评论条数(reply_num) 升序/降序
+        if sort_by == 'comment_num':
+            from django.db.models import FloatField
+            from django.db.models.functions import Cast
+            prefix = '' if order == 'asc' else '-'
+            queryset = queryset.annotate(
+                _comment_num_float=Cast('comment_num', FloatField())
+            ).order_by(f'{prefix}_comment_num_float', '-p_time')
+        elif sort_by == 'reply_num':
+            from django.db.models import F
+            # 使用 F() 明确按 reply_num 数值排序
+            if order == 'asc':
+                queryset = queryset.order_by(F('reply_num').asc(), '-p_time')
+            else:
+                queryset = queryset.order_by(F('reply_num').desc(), '-p_time')
+        else:
+            queryset = queryset.order_by('-p_time')
         
         # 分页
         paginator = Paginator(queryset, page_size)
@@ -3137,6 +3156,17 @@ def basic_table_query(request):
         all_sources = PSentiment.objects.values_list('source_c', flat=True).distinct().exclude(source_c__isnull=True).exclude(source_c='').order_by('source_c')
         all_source_types = PSentiment.objects.values_list('source_type', flat=True).distinct().exclude(source_type__isnull=True).exclude(source_type='').order_by('source_type')
         
+        # 在视图中构建排序链接，确保参数正确传递（解决点击评论条数无图标、排序不生效）
+        get_copy = request.GET.copy()
+        get_copy['page'] = 1
+        get_copy['page_size'] = page_size
+        get_copy['sort_by'] = 'comment_num'
+        get_copy['order'] = 'asc' if (sort_by == 'comment_num' and order == 'desc') else 'desc'
+        sort_url_comment_num = '?' + get_copy.urlencode()
+        get_copy['sort_by'] = 'reply_num'
+        get_copy['order'] = 'asc' if (sort_by == 'reply_num' and order == 'desc') else 'desc'
+        sort_url_reply_num = '?' + get_copy.urlencode()
+        
         context = {
             'records': records,
             'total_count': total_count,
@@ -3148,18 +3178,40 @@ def basic_table_query(request):
             'search_user_id': search_user_id,
             'search_source_type': search_source_type,
             'page_size': page_size,
+            'sort_by': sort_by,
+            'order': order,
+            'sort_url_comment_num': sort_url_comment_num,
+            'sort_url_reply_num': sort_url_reply_num,
         }
         
         return render(request, 'spiders/basic_table_query.html', context)
         
     except Exception as e:
         messages.error(request, f'加载数据失败: {str(e)}')
+        get_copy = request.GET.copy()
+        get_copy['page'] = 1
+        get_copy['page_size'] = request.GET.get('page_size', 20)
+        get_copy['sort_by'] = 'comment_num'
+        get_copy['order'] = 'desc'
+        sort_url_comment_num = '?' + get_copy.urlencode()
+        get_copy['sort_by'] = 'reply_num'
+        get_copy['order'] = 'desc'
+        sort_url_reply_num = '?' + get_copy.urlencode()
         return render(request, 'spiders/basic_table_query.html', {
             'records': [],
             'total_count': 0,
             'filtered_count': 0,
             'all_sources': [],
             'all_source_types': [],
+            'search_title': request.GET.get('search_title', ''),
+            'search_source': request.GET.get('search_source', ''),
+            'search_user_id': request.GET.get('search_user_id', ''),
+            'search_source_type': request.GET.get('search_source_type', ''),
+            'page_size': int(request.GET.get('page_size', 20)),
+            'sort_by': '',
+            'order': 'desc',
+            'sort_url_comment_num': sort_url_comment_num,
+            'sort_url_reply_num': sort_url_reply_num,
         })
 
 
