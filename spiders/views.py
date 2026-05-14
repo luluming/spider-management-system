@@ -514,6 +514,29 @@ def get_platform_project_daily_trends(request):
         })
 
 
+def _get_last_nonempty_get(request, key, default=''):
+    """取 QueryDict 中该键最后一次出现的非空值（避免 sort_by=a&sort_by= 时 .get 得到空串）。"""
+    for val in reversed(request.GET.getlist(key)):
+        s = (val or '').strip()
+        if s:
+            return s
+    return default
+
+
+def _parse_comments_page_size(request, default=20, max_size=500):
+    """解析每页条数：支持重复 key，忽略空段，避免 int('') 导致 500。"""
+    for raw in reversed(request.GET.getlist('page_size')):
+        s = (raw or '').strip()
+        if not s:
+            continue
+        try:
+            n = int(s)
+            return max(1, min(n, max_size))
+        except (TypeError, ValueError):
+            continue
+    return default
+
+
 @login_required
 def comments_list(request):
     """评论列表页面 - 基于QusetAnswer表显示，通过PSentiment表的poiId关联"""
@@ -526,8 +549,8 @@ def comments_list(request):
     
     rating = request.GET.get('rating', '')
     keyword = request.GET.get('keyword', '')
-    sort_by = request.GET.get('sort_by', '-release_time')
-    page_size = int(request.GET.get('page_size', 20))
+    sort_by = _get_last_nonempty_get(request, 'sort_by', '-release_time')
+    page_size = _parse_comments_page_size(request)
     
     # 如果没有选择平台或项目，返回空结果，避免显示过多数据
     if not platform and not project:
@@ -606,7 +629,20 @@ def comments_list(request):
         sort_by = '-like_num'
     elif sort_by == '-replyCount':
         sort_by = '-reply_num'
-    
+
+    allowed_sort = (
+        'release_time',
+        '-release_time',
+        'comment_grade',
+        '-comment_grade',
+        'like_num',
+        '-like_num',
+        'reply_num',
+        '-reply_num',
+    )
+    if sort_by not in allowed_sort:
+        sort_by = '-release_time'
+
     queryset = queryset.order_by(sort_by)
     
     # 分页
@@ -626,6 +662,7 @@ def comments_list(request):
         'page_obj': page_obj,
         'platforms': platforms,
         'projects': projects,
+        'sort_by': sort_by,
         'current_filters': {
             'platform': platform,
             'project': project,
@@ -640,7 +677,11 @@ def comments_list(request):
     
     # 如果是AJAX请求，只返回评论列表内容（与主页面保持一致使用tailwind模板）
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render(request, 'spiders/comments_list_content_tailwind.html', {'page_obj': page_obj})
+        return render(
+            request,
+            'spiders/comments_list_content_tailwind.html',
+            {'page_obj': page_obj, 'sort_by': sort_by},
+        )
     
     return render(request, 'spiders/comments_list.html', context)
 
@@ -651,7 +692,7 @@ def comment_anomaly_check(request):
     platform = request.GET.get('platform', '')
     project = request.GET.get('project', '')
     anomaly_types = request.GET.getlist('anomaly_type')  # 可多选: rating_1, negative, time_abnormal
-    page_size = int(request.GET.get('page_size', 20))
+    page_size = _parse_comments_page_size(request)
 
     # 基础查询：只查询在PSentiment中有记录的评论
     valid_poi_ids = PSentiment.objects.values_list('poiId', flat=True).distinct()

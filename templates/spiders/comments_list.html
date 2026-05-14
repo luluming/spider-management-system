@@ -32,6 +32,7 @@
     </div>
     <div>
         <form id="filter-form" method="get">
+            <input type="hidden" name="sort_by" id="sort-by-field" value="{{ sort_by|default:'-release_time' }}">
             <div class="grid grid-cols-1 sm:grid-cols-6 gap-4">
                 <div class="sm:col-span-1">
                     <label for="platform" class="block text-sm font-medium text-gray-700">平台</label>
@@ -254,6 +255,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if (resetBtn) {
     resetBtn.addEventListener('click', function() {
       if (filterForm) { filterForm.reset(); }
+      var sortField = document.getElementById('sort-by-field');
+      if (sortField) sortField.value = '-release_time';
       projectSelect.innerHTML = '<option value="">全部项目</option>';
       loadComments();
     });
@@ -276,10 +279,15 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function loadComments() {
-    var params = filterForm ? serializeForm(filterForm) : '';
-    params += '&page_size=' + getPageSize();
+    var params = new URLSearchParams();
+    if (filterForm) {
+      new FormData(filterForm).forEach(function(v, k) { params.append(k, v); });
+    }
+    params.set('page_size', String(getPageSize()));
+    var sb = params.get('sort_by');
+    if (!sb || !String(sb).trim()) params.set('sort_by', '-release_time');
 
-    fetch('{% url "comments_list" %}?' + params, {
+    fetch('{% url "comments_list" %}?' + params.toString(), {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       credentials: 'same-origin'
     }).then(function(resp) {
@@ -301,9 +309,14 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function updateStatistics() {
-    var params = filterForm ? serializeForm(filterForm) : '';
-    params += '&page_size=' + getPageSize();
-    fetch('{% url "get_statistics" %}?' + params, {
+    var params = new URLSearchParams();
+    if (filterForm) {
+      new FormData(filterForm).forEach(function(v, k) { params.append(k, v); });
+    }
+    params.set('page_size', String(getPageSize()));
+    var sb = params.get('sort_by');
+    if (!sb || !String(sb).trim()) params.set('sort_by', '-release_time');
+    fetch('{% url "get_statistics" %}?' + params.toString(), {
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
       credentials: 'same-origin'
     })
@@ -330,15 +343,31 @@ document.addEventListener('DOMContentLoaded', function() {
   updateStatistics();
 
   document.addEventListener('click', async function(e) {
+    var sortTh = e.target.closest('.sort-header-release-time');
+    if (sortTh && document.getElementById('sort-by-field')) {
+      e.preventDefault();
+      var sortField = document.getElementById('sort-by-field');
+      var cur = sortField.value || '-release_time';
+      if (cur === '-release_time') sortField.value = 'release_time';
+      else if (cur === 'release_time') sortField.value = '-release_time';
+      else sortField.value = '-release_time';
+      loadComments();
+      return;
+    }
     var el = e.target.closest('.pagination-link');
     if (!el || !document.getElementById('comments-list')) return;
     e.preventDefault();
     var page = el.dataset.page;
     try {
       var form = document.getElementById('filter-form');
-      var params = form ? new URLSearchParams(new FormData(form)) : new URLSearchParams();
+      var params = new URLSearchParams();
+      if (form) {
+        new FormData(form).forEach(function(v, k) { params.append(k, v); });
+      }
       var pageSizeEl = document.getElementById('filter-page-size') || document.getElementById('list-page-size');
       if (pageSizeEl) params.set('page_size', pageSizeEl.value);
+      var sb = params.get('sort_by');
+      if (!sb || !String(sb).trim()) params.set('sort_by', '-release_time');
       params.set('page', page);
       var resp = await fetch('{% url "comments_list" %}?' + params.toString(), {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
