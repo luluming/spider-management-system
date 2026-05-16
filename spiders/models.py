@@ -51,7 +51,48 @@ class SpiderBase(models.Model):
     @property
     def status(self):
         """兼容性属性：返回IteamState作为status"""
-        return self.IteamState or 'active'
+        return self.normalized_state
+
+    _STATE_ACTIVE_VALUES = frozenset({
+        'active', '激活', '启用', '1', 'true', 'on', 'running', '运行',
+    })
+    _STATE_INACTIVE_VALUES = frozenset({
+        'inactive', '关闭', '停用', '0', 'false', 'off', 'disabled', 'paused', '暂停',
+    })
+
+    @classmethod
+    def normalize_state(cls, value):
+        """将库内各种状态值统一为 active / inactive；空值视为激活。"""
+        if value is None:
+            return 'active'
+        raw = str(value).strip()
+        if not raw:
+            return 'active'
+        lowered = raw.lower()
+        if raw in cls._STATE_INACTIVE_VALUES or lowered in cls._STATE_INACTIVE_VALUES:
+            return 'inactive'
+        if raw in cls._STATE_ACTIVE_VALUES or lowered in cls._STATE_ACTIVE_VALUES:
+            return 'active'
+        return 'active'
+
+    @property
+    def normalized_state(self):
+        return self.normalize_state(self.IteamState)
+
+    @property
+    def is_config_active(self):
+        return self.normalized_state == 'active'
+
+    @property
+    def state_label(self):
+        return '激活' if self.is_config_active else '关闭'
+
+    def toggle_config_state(self):
+        """在激活与关闭之间切换，返回新状态（active/inactive）。"""
+        new_state = 'inactive' if self.is_config_active else 'active'
+        self.IteamState = new_state
+        self.save(update_fields=['IteamState', 'updated_at'])
+        return new_state
 
 
 class QusetAnswer(models.Model):

@@ -14,6 +14,39 @@ class DataManagementAPITests(TestCase):
         self.user.save()
         self.client.login(username='dm_user', password='pass')
 
+    def test_add_spider_same_name_different_platforms(self):
+        SpiderBase.objects.create(
+            IteamName='深圳世界之窗',
+            SalesChannel='去哪儿',
+            request_data='{}',
+            project_id='qunar-1',
+        )
+        resp = self.client.post('/add-spider/', {
+            'IteamName': '深圳世界之窗',
+            'SalesChannel': '抖音',
+            'request_data': '{}',
+            'project_id': 'dy-1',
+        })
+        data = json.loads(resp.content)
+        self.assertTrue(data.get('success'), data.get('message'))
+
+    def test_add_spider_duplicate_same_platform_rejected(self):
+        SpiderBase.objects.create(
+            IteamName='深圳世界之窗',
+            SalesChannel='抖音',
+            request_data='{}',
+            project_id='dy-1',
+        )
+        resp = self.client.post('/add-spider/', {
+            'IteamName': '深圳世界之窗',
+            'SalesChannel': '抖音',
+            'request_data': '{}',
+            'project_id': 'dy-2',
+        })
+        data = json.loads(resp.content)
+        self.assertFalse(data.get('success'))
+        self.assertIn('抖音', data.get('message', ''))
+
     def test_add_and_get_spider(self):
         # Add spider via API
         resp = self.client.post('/add-spider/', {
@@ -55,6 +88,27 @@ class DataManagementAPITests(TestCase):
         sb.refresh_from_db()
         self.assertEqual(sb.IteamName, 'New Name')
         self.assertEqual(sb.SalesChannel, 'NewChannel')
+
+    def test_toggle_spider_status(self):
+        sb = SpiderBase.objects.create(
+            IteamName='Toggle Test',
+            SalesChannel='抖音',
+            request_data='{}',
+            project_id='tog-1',
+            IteamState='active',
+        )
+        self.assertTrue(sb.is_config_active)
+        resp = self.client.post(f'/toggle-spider-status/{sb.id}/')
+        data = json.loads(resp.content)
+        self.assertTrue(data.get('success'), data.get('message'))
+        self.assertFalse(data.get('is_active'))
+        self.assertEqual(data.get('state_label'), '关闭')
+        sb.refresh_from_db()
+        self.assertEqual(sb.IteamState, 'inactive')
+        resp2 = self.client.post(f'/toggle-spider-status/{sb.id}/')
+        data2 = json.loads(resp2.content)
+        self.assertTrue(data2.get('is_active'))
+        self.assertEqual(data2.get('state_label'), '激活')
 
     def test_delete_spider(self):
         sb = SpiderBase.objects.create(IteamName='ToDelete', SalesChannel='DelChannel', request_data='{}', project_id='pdel')
@@ -111,3 +165,28 @@ class DataManagementAPITests(TestCase):
             self.fail(f"get-platform-project-daily-trends failed: {data2}")
         self.assertIn('platform_project_trends', data2)
         self.assertIn('dates', data2)
+
+    def test_basic_table_sort_by_reply_num(self):
+        now = timezone.now()
+        PSentiment.objects.create(poiId='sort-low', source_c='抖音', title='低评论', reply_num=5, comment_num='4.0', p_time=now)
+        PSentiment.objects.create(poiId='sort-high', source_c='抖音', title='高评论', reply_num=500, comment_num='4.5', p_time=now)
+
+        resp = self.client.get('/basic-table-query/', {
+            'sort_by': 'reply_num',
+            'order': 'desc',
+            'page_size': 20,
+        })
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode()
+        self.assertIn('sort-high', content)
+        self.assertIn('sort-low', content)
+        self.assertLess(content.index('sort-high'), content.index('sort-low'))
+        self.assertIn('fa-sort-down', content)
+
+    def test_basic_table_sort_links_in_template(self):
+        now = timezone.now()
+        PSentiment.objects.create(poiId='sort-link', source_c='抖音', title='链接测试', reply_num=1, comment_num='3.0', p_time=now)
+        resp = self.client.get('/basic-table-query/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'sort_by=comment_num')
+        self.assertContains(resp, 'sort_by=reply_num')

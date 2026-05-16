@@ -23,6 +23,7 @@ urlpatterns = [
     path('add-spider/', views.add_spider, name='add_spider'),
     path('edit-spider/<int:spider_id>/', views.edit_spider, name='edit_spider'),
     path('delete-spider/<int:spider_id>/', views.delete_spider, name='delete_spider'),
+    path('toggle-spider-status/<int:spider_id>/', views.toggle_spider_status, name='toggle_spider_status'),
     path('get-spider-detail/<int:spider_id>/', views.get_spider_detail, name='get_spider_detail'),
     # 用户管理模块
     path('user-management/', views.user_management, name='user_management'),

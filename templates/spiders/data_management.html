@@ -7,6 +7,10 @@
 <style>
   .data-mgmt-page .card-retro { border-color: #bfdbfe; background: linear-gradient(180deg, #f0f9ff, #fff); }
   .data-mgmt-page select:focus, .data-mgmt-page input:focus, .data-mgmt-page textarea:focus { border-color: #60a5fa; outline: none; box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3); }
+  .data-mgmt-page .config-table th,
+  .data-mgmt-page .config-table td { white-space: nowrap; font-size: 0.8125rem; }
+  .data-mgmt-page .config-table th { text-align: center; }
+  .data-mgmt-page .config-table td { text-align: center; vertical-align: middle; }
 </style>
 {% endblock %}
 
@@ -50,19 +54,24 @@
     </form>
 
     <div class="overflow-x-auto overflow-y-auto border border-blue-200 rounded-lg bg-white" style="max-height: 65vh;">
-      <table class="min-w-full divide-y divide-gray-200">
+      <table class="min-w-full divide-y divide-gray-200 config-table">
         <thead class="bg-blue-50 sticky top-0 z-10">
           <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目名称</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">销售渠道</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行业</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">请求数据</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目ID</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">POI</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">排序</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">ID</th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">项目名称<br><span class="text-gray-400 font-normal normal-case">IteamName</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">销售渠道<br><span class="text-gray-400 font-normal normal-case">SalesChannel</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">行业<br><span class="text-gray-400 font-normal normal-case">industry</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">请求数据<br><span class="text-gray-400 font-normal normal-case">request_data</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">项目ID<br><span class="text-gray-400 font-normal normal-case">project_id</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">状态<br><span class="text-gray-400 font-normal normal-case">IteamState</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">POI<br><span class="text-gray-400 font-normal normal-case">poid</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">排序<br><span class="text-gray-400 font-normal normal-case">sort_type</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">采集总页数<br><span class="text-gray-400 font-normal normal-case">total_collection_page</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">城市<br><span class="text-gray-400 font-normal normal-case">city</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">创建时间<br><span class="text-gray-400 font-normal normal-case">created_at</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">更新时间<br><span class="text-gray-400 font-normal normal-case">updated_at</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">创建人<br><span class="text-gray-400 font-normal normal-case">created_by</span></th>
+            <th scope="col" class="px-3 py-2 font-medium text-gray-600">操作</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -76,12 +85,25 @@
               <span class="text-sm text-gray-500 truncate block max-w-xs" title="{{ spider.request_data|default:'' }}">{{ spider.request_data|truncatechars:30|default:"-" }}</span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ spider.project_id|default:"-" }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ spider.IteamState|default:"-" }}</span>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <button type="button"
+                      class="status-toggle-btn inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-400 {% if spider.is_config_active %}bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200{% else %}bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200{% endif %}"
+                      data-spider-id="{{ spider.id }}"
+                      data-active="{% if spider.is_config_active %}1{% else %}0{% endif %}"
+                      onclick="toggleSpiderStatus({{ spider.id }}, this)"
+                      title="点击切换激活/关闭">
+                <i class="fas fa-circle text-[6px] {% if spider.is_config_active %}text-emerald-500{% else %}text-gray-400{% endif %}"></i>
+                <span class="status-label">{{ spider.state_label }}</span>
+              </button>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ spider.poid|default:"-" }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ spider.sort_type|default:"-" }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-3 py-2 text-gray-900">{{ spider.sort_type|default:"-" }}</td>
+            <td class="px-3 py-2 text-gray-900">{{ spider.total_collection_page|default:"-" }}</td>
+            <td class="px-3 py-2 text-gray-900">{{ spider.city|default:"-" }}</td>
+            <td class="px-3 py-2 text-gray-500">{{ spider.created_at|date:"Y-m-d H:i"|default:"-" }}</td>
+            <td class="px-3 py-2 text-gray-500">{{ spider.updated_at|date:"Y-m-d H:i"|default:"-" }}</td>
+            <td class="px-3 py-2 text-gray-900">{{ spider.created_by.username|default:"-" }}</td>
+            <td class="px-3 py-2">
               <div class="inline-flex gap-1">
                 <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded border border-blue-200 bg-white text-blue-600 hover:bg-blue-50" onclick="viewSpider({{ spider.id }})" title="查看"><i class="fas fa-eye"></i></button>
                 <button type="button" class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded border border-blue-200 bg-white text-blue-600 hover:bg-blue-50" onclick="editSpider({{ spider.id }})" title="编辑"><i class="fas fa-edit"></i></button>
@@ -91,7 +113,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td class="px-6 py-12 text-center" colspan="10">
+            <td class="px-6 py-12 text-center" colspan="15">
               <div class="flex flex-col items-center">
                 <i class="fas fa-inbox text-4xl text-blue-300 mb-4"></i>
                 <h5 class="text-lg font-medium text-gray-700 mb-1">暂无数据</h5>
@@ -144,10 +166,14 @@
           <div>
             <label class="block text-sm text-muted mb-1">项目名称(IteamName) <span class="text-red-500">*</span></label>
             <input type="text" name="IteamName" class="w-full border rounded px-2 py-2" required>
+            <p class="text-xs text-gray-500 mt-1">不同平台可使用相同项目名称（如各平台的「深圳世界之窗」）；同一平台内不可重复。</p>
           </div>
           <div>
             <label class="block text-sm text-muted mb-1">销售渠道(SalesChannel) <span class="text-red-500">*</span></label>
-            <input type="text" name="SalesChannel" class="w-full border rounded px-2 py-2" required>
+            <input type="text" name="SalesChannel" list="platformListAdd" class="w-full border rounded px-2 py-2" required placeholder="如：抖音、去哪儿">
+            <datalist id="platformListAdd">
+              {% for platform in platforms %}<option value="{{ platform }}">{% endfor %}
+            </datalist>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -167,7 +193,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           <div>
             <label class="block text-sm text-muted mb-1">项目状态(IteamState)</label>
-            <input type="text" name="IteamState" class="w-full border rounded px-2 py-2">
+            <select name="IteamState" class="w-full border rounded px-2 py-2">
+              <option value="active" selected>激活</option>
+              <option value="inactive">关闭</option>
+            </select>
           </div>
           <div>
             <label class="block text-sm text-muted mb-1">POI ID(poid)</label>
@@ -176,6 +205,16 @@
           <div>
             <label class="block text-sm text-muted mb-1">排序(sort_type)</label>
             <input type="text" name="sort_type" class="w-full border rounded px-2 py-2">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">采集总页数(total_collection_page)</label>
+            <input type="number" name="total_collection_page" class="w-full border rounded px-2 py-2" min="0">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">城市(city)</label>
+            <input type="text" name="city" class="w-full border rounded px-2 py-2">
           </div>
         </div>
         <div class="mt-4 flex justify-end space-x-2">
@@ -220,7 +259,10 @@
           </div>
           <div>
             <label class="block text-sm text-muted mb-1">销售渠道(SalesChannel) <span class="text-red-500">*</span></label>
-            <input type="text" name="SalesChannel" id="editSalesChannel" class="w-full border rounded px-2 py-2" required>
+            <input type="text" name="SalesChannel" id="editSalesChannel" list="platformListEdit" class="w-full border rounded px-2 py-2" required>
+            <datalist id="platformListEdit">
+              {% for platform in platforms %}<option value="{{ platform }}">{% endfor %}
+            </datalist>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -240,7 +282,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           <div>
             <label class="block text-sm text-muted mb-1">项目状态(IteamState)</label>
-            <input type="text" name="IteamState" id="editIteamState" class="w-full border rounded px-2 py-2">
+            <select name="IteamState" id="editIteamState" class="w-full border rounded px-2 py-2">
+              <option value="active">激活</option>
+              <option value="inactive">关闭</option>
+            </select>
           </div>
           <div>
             <label class="block text-sm text-muted mb-1">POI ID(poid)</label>
@@ -249,6 +294,16 @@
           <div>
             <label class="block text-sm text-muted mb-1">排序(sort_type)</label>
             <input type="text" name="sort_type" id="editSortType" class="w-full border rounded px-2 py-2">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label class="block text-sm text-muted mb-1">采集总页数(total_collection_page)</label>
+            <input type="number" name="total_collection_page" id="editTotalCollectionPage" class="w-full border rounded px-2 py-2" min="0">
+          </div>
+          <div>
+            <label class="block text-sm text-muted mb-1">城市(city)</label>
+            <input type="text" name="city" id="editCity" class="w-full border rounded px-2 py-2">
           </div>
         </div>
         <div class="mt-4 flex justify-end space-x-2">
@@ -347,12 +402,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div><strong>行业:</strong> ${s.industry || '-'}</div>
                         <div><strong>项目ID:</strong> ${s.project_id || '-'}</div>
-                        <div><strong>项目状态:</strong> ${s.IteamState || '-'}</div>
+                        <div><strong>项目状态:</strong> ${s.state_label || s.IteamState || '-'}</div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
                         <div><strong>POI ID:</strong> ${s.poid || '-'}</div>
                         <div><strong>排序:</strong> ${s.sort_type || '-'}</div>
+                        <div><strong>采集总页数:</strong> ${s.total_collection_page != null ? s.total_collection_page : '-'}</div>
                     </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                        <div><strong>城市:</strong> ${s.city || '-'}</div>
+                        <div><strong>创建时间:</strong> ${s.created_at || '-'}</div>
+                        <div><strong>更新时间:</strong> ${s.updated_at || '-'}</div>
+                    </div>
+                    <div class="mt-2"><strong>创建人:</strong> ${s.created_by || '-'}</div>
                     <div class="mt-3">
                         <strong>请求数据:</strong>
                         <pre class="bg-gray-100 p-2 border rounded" style="white-space: pre-wrap;">${s.request_data || ''}</pre>
@@ -380,9 +442,11 @@
                 document.getElementById('editIndustry').value = s.industry || '';
                 document.getElementById('editProjectId').value = s.project_id || '';
                 document.getElementById('editRequestData').value = s.request_data || '';
-                document.getElementById('editIteamState').value = s.IteamState || '';
+                document.getElementById('editIteamState').value = s.normalized_state || 'active';
                 document.getElementById('editPoid').value = s.poid || '';
                 document.getElementById('editSortType').value = s.sort_type || '';
+                document.getElementById('editTotalCollectionPage').value = s.total_collection_page != null ? s.total_collection_page : '';
+                document.getElementById('editCity').value = s.city || '';
 
                 window.dispatchEvent(new CustomEvent('open-edit-modal'));
             } else {
@@ -396,6 +460,42 @@
     // 刷新页面
     function refreshData() {
         location.reload();
+    }
+
+    // 切换配置激活/关闭
+    async function toggleSpiderStatus(spiderId, btn) {
+        if (!btn || btn.disabled) return;
+        btn.disabled = true;
+        try {
+            var resp = await fetch('/toggle-spider-status/' + spiderId + '/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            });
+            var data = await resp.json();
+            if (data.success) {
+                var isActive = !!data.is_active;
+                var labelEl = btn.querySelector('.status-label');
+                if (labelEl) labelEl.textContent = data.state_label || (isActive ? '激活' : '关闭');
+                btn.dataset.active = isActive ? '1' : '0';
+                btn.title = '点击切换为' + (isActive ? '关闭' : '激活');
+                btn.classList.remove('bg-emerald-100', 'text-emerald-800', 'border-emerald-200', 'hover:bg-emerald-200',
+                    'bg-gray-100', 'text-gray-600', 'border-gray-200', 'hover:bg-gray-200');
+                var icon = btn.querySelector('.fa-circle');
+                if (isActive) {
+                    btn.classList.add('bg-emerald-100', 'text-emerald-800', 'border-emerald-200', 'hover:bg-emerald-200');
+                    if (icon) icon.classList.remove('text-gray-400'), icon.classList.add('text-emerald-500');
+                } else {
+                    btn.classList.add('bg-gray-100', 'text-gray-600', 'border-gray-200', 'hover:bg-gray-200');
+                    if (icon) icon.classList.remove('text-emerald-500'), icon.classList.add('text-gray-400');
+                }
+            } else {
+                alert('切换失败：' + (data.message || '未知错误'));
+            }
+        } catch (err) {
+            alert('请求失败，请重试');
+        } finally {
+            btn.disabled = false;
+        }
     }
 
     // Delete spider

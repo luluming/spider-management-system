@@ -2075,7 +2075,7 @@ def data_management(request):
     per_page = 20
     
     # 构建查询条件 - 基于spider_base表
-    spider_query = SpiderBase.objects.all()
+    spider_query = SpiderBase.objects.select_related('created_by').all()
     
     if platform:
         spider_query = spider_query.filter(SalesChannel=platform)
@@ -2133,6 +2133,23 @@ def data_management(request):
     return render(request, 'spiders/data_management.html', context)
 
 
+def _spider_config_duplicate_exists(title, platform, exclude_id=None):
+    """同一平台下项目名称不可重复；不同平台允许同名项目。"""
+    qs = SpiderBase.objects.filter(IteamName=title, SalesChannel=platform)
+    if exclude_id is not None:
+        qs = qs.exclude(id=exclude_id)
+    return qs.exists()
+
+
+def _parse_optional_int(value):
+    if value is None or str(value).strip() == '':
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @login_required
 @csrf_exempt
 def add_spider(request):
@@ -2140,22 +2157,32 @@ def add_spider(request):
     if request.method == 'POST':
         try:
             # 获取表单数据
-            title = request.POST.get('IteamName') or request.POST.get('title')
-            platform = request.POST.get('SalesChannel') or request.POST.get('platform')
+            title = (request.POST.get('IteamName') or request.POST.get('title') or '').strip()
+            platform = (request.POST.get('SalesChannel') or request.POST.get('platform') or '').strip()
             industry = request.POST.get('industry')
             request_data = request.POST.get('request_data')
             project_id = request.POST.get('project_id')
-            status = request.POST.get('IteamState') or request.POST.get('status')
-            poid = request.POST.get('poid')
+            status = (request.POST.get('IteamState') or request.POST.get('status') or '').strip()
+            poid = _parse_optional_int(request.POST.get('poid'))
             sort_type = request.POST.get('sort_type')
+            total_collection_page = _parse_optional_int(request.POST.get('total_collection_page'))
+            city = (request.POST.get('city') or '').strip() or None
             
             # 验证必填字段
             if not all([title, platform]):
                 return JsonResponse({'success': False, 'message': '请填写所有必填字段'})
             
-            # 检查项目名称是否已存在
-            if SpiderBase.objects.filter(IteamName=title).exists():
-                return JsonResponse({'success': False, 'message': '该项目名称已存在'})
+            if not status:
+                status = 'active'
+            else:
+                status = SpiderBase.normalize_state(status)
+            
+            # 同一平台下项目名称不可重复（不同平台可同名，如各平台的「深圳世界之窗」）
+            if _spider_config_duplicate_exists(title, platform):
+                return JsonResponse({
+                    'success': False,
+                    'message': f'平台「{platform}」下已存在项目「{title}」，请勿重复添加',
+                })
             
             # 创建爬虫数据
             spider = SpiderBase.objects.create(
@@ -2165,8 +2192,11 @@ def add_spider(request):
                 request_data=request_data or '',
                 project_id=project_id,
                 IteamState=status,
-                poid=poid or None,
-                sort_type=sort_type
+                poid=poid,
+                sort_type=sort_type,
+                total_collection_page=total_collection_page,
+                city=city,
+                created_by=request.user if request.user.is_authenticated else None,
             )
             
             # 记录操作日志
@@ -2201,22 +2231,31 @@ def edit_spider(request, spider_id):
             spider = SpiderBase.objects.get(id=spider_id)
             
             # 获取表单数据
-            title = request.POST.get('IteamName') or request.POST.get('title')
-            platform = request.POST.get('SalesChannel') or request.POST.get('platform')
+            title = (request.POST.get('IteamName') or request.POST.get('title') or '').strip()
+            platform = (request.POST.get('SalesChannel') or request.POST.get('platform') or '').strip()
             industry = request.POST.get('industry')
             request_data = request.POST.get('request_data')
             project_id = request.POST.get('project_id')
-            status = request.POST.get('IteamState') or request.POST.get('status')
-            poid = request.POST.get('poid')
+            status = (request.POST.get('IteamState') or request.POST.get('status') or '').strip()
+            poid = _parse_optional_int(request.POST.get('poid'))
             sort_type = request.POST.get('sort_type')
+            total_collection_page = _parse_optional_int(request.POST.get('total_collection_page'))
+            city = (request.POST.get('city') or '').strip() or None
             
             # 验证必填字段
             if not all([title, platform]):
                 return JsonResponse({'success': False, 'message': '请填写所有必填字段'})
             
-            # 检查项目名称是否已被其他记录使用
-            if SpiderBase.objects.filter(IteamName=title).exclude(id=spider_id).exists():
-                return JsonResponse({'success': False, 'message': '该项目名称已被其他记录使用'})
+            if status:
+                status = SpiderBase.normalize_state(status)
+            else:
+                status = spider.IteamState or 'active'
+            
+            if _spider_config_duplicate_exists(title, platform, exclude_id=spider_id):
+                return JsonResponse({
+                    'success': False,
+                    'message': f'平台「{platform}」下已存在项目「{title}」，请更换名称或平台',
+                })
             
             # 更新数据
             old_data = f'{spider.IteamName} ({spider.SalesChannel})'
@@ -2227,8 +2266,10 @@ def edit_spider(request, spider_id):
             spider.request_data = request_data or ''
             spider.project_id = project_id
             spider.IteamState = status
-            spider.poid = poid or spider.poid
+            spider.poid = poid
             spider.sort_type = sort_type
+            spider.total_collection_page = total_collection_page
+            spider.city = city
             spider.save()
             
             # 记录操作日志
@@ -2292,6 +2333,39 @@ def delete_spider(request, spider_id):
 
 
 @login_required
+@csrf_exempt
+def toggle_spider_status(request, spider_id):
+    """切换配置激活/关闭状态"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': '请求方法错误'})
+    try:
+        spider = SpiderBase.objects.get(id=spider_id)
+        old_label = spider.state_label
+        new_state = spider.toggle_config_state()
+        new_label = spider.state_label
+        OperationLog.objects.create(
+            user=request.user,
+            operation='切换爬虫状态',
+            action='update',
+            target=f'SpiderBase-{spider.id}',
+            description=f'状态切换: {spider.IteamName} ({spider.SalesChannel}) {old_label} -> {new_label}',
+            ip_address=request.META.get('REMOTE_ADDR', ''),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        )
+        return JsonResponse({
+            'success': True,
+            'message': f'已切换为「{new_label}」',
+            'IteamState': new_state,
+            'state_label': new_label,
+            'is_active': spider.is_config_active,
+        })
+    except SpiderBase.DoesNotExist:
+        return JsonResponse({'success': False, 'message': '记录不存在'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'切换失败: {str(e)}'})
+
+
+@login_required
 def get_spider_detail(request, spider_id):
     """获取爬虫详情"""
     try:
@@ -2306,8 +2380,16 @@ def get_spider_detail(request, spider_id):
                 'request_data': spider.request_data,
                 'project_id': spider.project_id,
                 'IteamState': spider.IteamState,
+                'normalized_state': spider.normalized_state,
+                'state_label': spider.state_label,
+                'is_active': spider.is_config_active,
                 'poid': spider.poid,
                 'sort_type': spider.sort_type,
+                'total_collection_page': spider.total_collection_page,
+                'city': spider.city,
+                'created_at': spider.created_at.strftime('%Y-%m-%d %H:%M') if spider.created_at else '',
+                'updated_at': spider.updated_at.strftime('%Y-%m-%d %H:%M') if spider.updated_at else '',
+                'created_by': spider.created_by.username if spider.created_by else '',
             }
         })
     except SpiderBase.DoesNotExist:
@@ -3127,6 +3209,24 @@ def get_projects_by_platform(request):
 
 # ==================== 基础表查询模块 ====================
 
+def _basic_table_filter_query_string(search_title, search_source, search_source_type, search_user_id, page_size, sort_by='', order='desc'):
+    """构建筛选/排序查询串（不含 page），供分页链接复用。"""
+    from urllib.parse import urlencode
+    params = {'page_size': page_size}
+    if search_title:
+        params['search_title'] = search_title
+    if search_source:
+        params['search_source'] = search_source
+    if search_source_type:
+        params['search_source_type'] = search_source_type
+    if search_user_id:
+        params['search_user_id'] = search_user_id
+    if sort_by:
+        params['sort_by'] = sort_by
+        params['order'] = order
+    return urlencode(params)
+
+
 @login_required
 def basic_table_query(request):
     """基础表查询主页面"""
@@ -3207,6 +3307,10 @@ def basic_table_query(request):
         get_copy['sort_by'] = 'reply_num'
         get_copy['order'] = 'asc' if (sort_by == 'reply_num' and order == 'desc') else 'desc'
         sort_url_reply_num = '?' + get_copy.urlencode()
+        filter_query = _basic_table_filter_query_string(
+            search_title, search_source, search_source_type, search_user_id,
+            page_size, sort_by, order,
+        )
         
         context = {
             'records': records,
@@ -3223,6 +3327,7 @@ def basic_table_query(request):
             'order': order,
             'sort_url_comment_num': sort_url_comment_num,
             'sort_url_reply_num': sort_url_reply_num,
+            'filter_query': filter_query,
         }
         
         return render(request, 'spiders/basic_table_query.html', context)
@@ -3238,6 +3343,14 @@ def basic_table_query(request):
         get_copy['sort_by'] = 'reply_num'
         get_copy['order'] = 'desc'
         sort_url_reply_num = '?' + get_copy.urlencode()
+        page_size_err = int(request.GET.get('page_size', 20))
+        filter_query = _basic_table_filter_query_string(
+            request.GET.get('search_title', '').strip(),
+            request.GET.get('search_source', '').strip(),
+            request.GET.get('search_source_type', '').strip(),
+            request.GET.get('search_user_id', '').strip(),
+            page_size_err,
+        )
         return render(request, 'spiders/basic_table_query.html', {
             'records': [],
             'total_count': 0,
@@ -3248,11 +3361,12 @@ def basic_table_query(request):
             'search_source': request.GET.get('search_source', ''),
             'search_user_id': request.GET.get('search_user_id', ''),
             'search_source_type': request.GET.get('search_source_type', ''),
-            'page_size': int(request.GET.get('page_size', 20)),
+            'page_size': page_size_err,
             'sort_by': '',
             'order': 'desc',
             'sort_url_comment_num': sort_url_comment_num,
             'sort_url_reply_num': sort_url_reply_num,
+            'filter_query': filter_query,
         })
 
 
