@@ -1,0 +1,205 @@
+{% extends 'base_tailwind.html' %}
+
+{% block title %}采集用户管理 - 账号与权限{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 class="text-xl font-semibold font-serif text-retro-heading">
+      <i class="fas fa-mobile-alt mr-2 text-primary-600"></i>采集用户管理 · 账号与权限
+    </h2>
+    <button type="button" class="px-4 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-blue-700" onclick="showAddModal()">
+      <i class="fas fa-plus mr-1"></i>新增采集员
+    </button>
+  </div>
+
+  {% include 'spiders/includes/collector_subnav.html' %}
+
+  <div class="card-retro p-4">
+    <p class="text-sm text-muted mb-3">采集员账号仅用于 App 登录，与 Web 后台用户独立。新建时需设置初始密码；已有账号可通过「重置密码」修改登录密码。</p>
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-retro text-sm">
+        <thead class="bg-blue-50">
+          <tr>
+            <th class="px-3 py-2 text-left">ID</th>
+            <th class="px-3 py-2 text-left">账号</th>
+            <th class="px-3 py-2 text-left">显示名</th>
+            <th class="px-3 py-2 text-left">手机</th>
+            <th class="px-3 py-2 text-left">状态</th>
+            <th class="px-3 py-2 text-left">绑定设备</th>
+            <th class="px-3 py-2 text-left">创建时间</th>
+            <th class="px-3 py-2 text-left">操作</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          {% for c in collectors %}
+          <tr class="hover:bg-blue-50/40">
+            <td class="px-3 py-2">{{ c.id }}</td>
+            <td class="px-3 py-2 font-medium">{{ c.username }}</td>
+            <td class="px-3 py-2">{{ c.display_name|default:'-' }}</td>
+            <td class="px-3 py-2">{{ c.phone|default:'-' }}</td>
+            <td class="px-3 py-2">{% if c.is_active %}<span class="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">启用</span>{% else %}<span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs">禁用</span>{% endif %}</td>
+            <td class="px-3 py-2"><span class="text-xs text-muted">{{ c.bound_device_id|default:'未绑定'|truncatechars:20 }}</span></td>
+            <td class="px-3 py-2 text-muted">{{ c.created_at|date:'Y-m-d H:i' }}</td>
+            <td class="px-3 py-2">
+              <div class="flex flex-wrap gap-1">
+                <a href="{% url 'app_collector_permissions' c.id %}" class="px-2 py-1 text-xs rounded border border-blue-300 text-blue-700 hover:bg-blue-50">权限分配</a>
+                <button type="button" class="px-2 py-1 text-xs rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+                  onclick="showResetPwdModal({{ c.id }}, '{{ c.username|escapejs }}')">重置密码</button>
+                <button type="button" class="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  onclick="showEditModal({{ c.id }}, '{{ c.username|escapejs }}', '{{ c.display_name|default:""|escapejs }}', '{{ c.phone|default:""|escapejs }}', {{ c.is_active|yesno:'true,false' }})">编辑</button>
+                <button type="button" class="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:bg-gray-50" onclick="unlock({{ c.id }})">解锁</button>
+                <button type="button" class="px-2 py-1 text-xs rounded border border-orange-300 text-orange-700 hover:bg-orange-50" onclick="unbind({{ c.id }})">解绑设备</button>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8" class="text-center text-muted py-8">暂无采集员，请点击右上角新增</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 新增 -->
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">新增采集员</h3>
+      <button type="button" class="text-gray-400 hover:text-gray-600" onclick="hideModal('addModal')">&times;</button>
+    </div>
+    <div class="space-y-3">
+      <div><label class="block text-sm text-muted mb-1">登录账号 *</label><input id="add_username" class="w-full border rounded px-3 py-2" autocomplete="off"></div>
+      <div><label class="block text-sm text-muted mb-1">初始密码 *</label><input id="add_password" type="password" class="w-full border rounded px-3 py-2" placeholder="至少6位"></div>
+      <div><label class="block text-sm text-muted mb-1">确认密码 *</label><input id="add_password2" type="password" class="w-full border rounded px-3 py-2"></div>
+      <div><label class="block text-sm text-muted mb-1">显示名</label><input id="add_display_name" class="w-full border rounded px-3 py-2"></div>
+      <div><label class="block text-sm text-muted mb-1">手机号</label><input id="add_phone" class="w-full border rounded px-3 py-2"></div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" class="px-4 py-2 rounded border" onclick="hideModal('addModal')">取消</button>
+      <button type="button" class="px-4 py-2 rounded bg-primary-600 text-white" onclick="submitAdd()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 重置密码 -->
+<div id="resetPwdModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">重置密码 · <span id="reset_pwd_username" class="text-blue-700"></span></h3>
+      <button type="button" class="text-gray-400 hover:text-gray-600" onclick="hideModal('resetPwdModal')">&times;</button>
+    </div>
+    <p class="text-sm text-muted mb-3">重置后将立即生效，同时清除登录锁定状态。</p>
+    <input type="hidden" id="reset_pwd_id">
+    <div class="space-y-3">
+      <div><label class="block text-sm text-muted mb-1">新密码 *</label><input id="reset_password" type="password" class="w-full border rounded px-3 py-2" placeholder="至少6位"></div>
+      <div><label class="block text-sm text-muted mb-1">确认新密码 *</label><input id="reset_password2" type="password" class="w-full border rounded px-3 py-2"></div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" class="px-4 py-2 rounded border" onclick="hideModal('resetPwdModal')">取消</button>
+      <button type="button" class="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700" onclick="submitResetPwd()">确认重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑资料 -->
+<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">编辑采集员 · <span id="edit_username" class="text-blue-700"></span></h3>
+      <button type="button" class="text-gray-400 hover:text-gray-600" onclick="hideModal('editModal')">&times;</button>
+    </div>
+    <input type="hidden" id="edit_id">
+    <div class="space-y-3">
+      <div><label class="block text-sm text-muted mb-1">显示名</label><input id="edit_display_name" class="w-full border rounded px-3 py-2"></div>
+      <div><label class="block text-sm text-muted mb-1">手机号</label><input id="edit_phone" class="w-full border rounded px-3 py-2"></div>
+      <div class="flex items-center gap-2">
+        <input type="checkbox" id="edit_is_active" class="rounded">
+        <label for="edit_is_active" class="text-sm">账号启用</label>
+      </div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" class="px-4 py-2 rounded border" onclick="hideModal('editModal')">取消</button>
+      <button type="button" class="px-4 py-2 rounded bg-primary-600 text-white" onclick="submitEdit()">保存</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function csrf() {
+  return document.querySelector('meta[name=csrf-token]')?.getAttribute('content')
+    || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+}
+function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+function showAddModal() { document.getElementById('addModal').classList.remove('hidden'); }
+function showResetPwdModal(id, username) {
+  document.getElementById('reset_pwd_id').value = id;
+  document.getElementById('reset_pwd_username').textContent = username;
+  document.getElementById('reset_password').value = '';
+  document.getElementById('reset_password2').value = '';
+  document.getElementById('resetPwdModal').classList.remove('hidden');
+}
+function showEditModal(id, username, displayName, phone, isActive) {
+  document.getElementById('edit_id').value = id;
+  document.getElementById('edit_username').textContent = username;
+  document.getElementById('edit_display_name').value = displayName || '';
+  document.getElementById('edit_phone').value = phone || '';
+  document.getElementById('edit_is_active').checked = !!isActive;
+  document.getElementById('editModal').classList.remove('hidden');
+}
+function submitAdd() {
+  const pwd = document.getElementById('add_password').value;
+  const pwd2 = document.getElementById('add_password2').value;
+  if (pwd.length < 6) { alert('密码长度至少6位'); return; }
+  if (pwd !== pwd2) { alert('两次输入的密码不一致'); return; }
+  fetch('{% url "app_collector_add" %}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
+    body: JSON.stringify({
+      username: document.getElementById('add_username').value.trim(),
+      password: pwd,
+      display_name: document.getElementById('add_display_name').value.trim(),
+      phone: document.getElementById('add_phone').value.trim(),
+    })
+  }).then(r => r.json()).then(d => { alert(d.message); if (d.success) location.reload(); });
+}
+function submitResetPwd() {
+  const id = document.getElementById('reset_pwd_id').value;
+  const pwd = document.getElementById('reset_password').value;
+  const pwd2 = document.getElementById('reset_password2').value;
+  if (pwd.length < 6) { alert('密码长度至少6位'); return; }
+  if (pwd !== pwd2) { alert('两次输入的密码不一致'); return; }
+  if (!confirm('确认重置该采集员的登录密码？')) return;
+  fetch('/app-collector-reset-password/' + id + '/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
+    body: JSON.stringify({ password: pwd, confirm_password: pwd2 })
+  }).then(r => r.json()).then(d => { alert(d.message); if (d.success) hideModal('resetPwdModal'); });
+}
+function submitEdit() {
+  const id = document.getElementById('edit_id').value;
+  fetch('/app-collector-edit/' + id + '/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
+    body: JSON.stringify({
+      display_name: document.getElementById('edit_display_name').value.trim(),
+      phone: document.getElementById('edit_phone').value.trim(),
+      is_active: document.getElementById('edit_is_active').checked,
+    })
+  }).then(r => r.json()).then(d => { alert(d.message); if (d.success) location.reload(); });
+}
+function unlock(id) {
+  if (!confirm('确认解锁该账号？')) return;
+  fetch('/app-collector-unlock/' + id + '/', {method:'POST', headers:{'X-CSRFToken': csrf()}})
+    .then(r=>r.json()).then(d=>{ alert(d.message); if(d.success) location.reload(); });
+}
+function unbind(id) {
+  if (!confirm('确认清除设备绑定？')) return;
+  fetch('/app-collector-unbind/' + id + '/', {method:'POST', headers:{'X-CSRFToken': csrf()}})
+    .then(r=>r.json()).then(d=>{ alert(d.message); if(d.success) location.reload(); });
+}
+</script>
+{% endblock %}

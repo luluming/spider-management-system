@@ -154,14 +154,26 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Cache configuration
+# Mobile App API settings
+MOBILE_API_TOKEN_DAYS = 30
+MOBILE_LOGIN_MAX_FAILURES = 5
+MOBILE_LOGIN_LOCK_MINUTES = 30
+MOBILE_REBIND_VERIFY_MINUTES = 15
+MOBILE_REBIND_ADMIN_HOURS = 24
+MOBILE_REBIND_COMPLETE_HOURS = 2
+MOBILE_REBIND_MAX_VERIFY_ATTEMPTS = 5
+
+# Cache configuration (file-based: shared across uWSGI workers)
+CACHE_DIR = BASE_DIR / 'run' / 'cache'
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
-        'TIMEOUT': 300,  # 5分钟缓存
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': str(CACHE_DIR / 'django_default'),
+        'TIMEOUT': 300,
         'OPTIONS': {
-            'MAX_ENTRIES': 1000,
+            'MAX_ENTRIES': 10000,
         }
     }
 }

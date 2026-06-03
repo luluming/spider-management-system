@@ -1,0 +1,277 @@
+{% extends 'base_tailwind.html' %}
+
+{% block title %}采集用户管理 - 权限分配{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <h2 class="text-xl font-semibold font-serif text-retro-heading">
+      <i class="fas fa-mobile-alt mr-2 text-primary-600"></i>采集用户管理
+    </h2>
+    <a href="{% url 'app_collector_management' %}" class="text-sm text-blue-600 hover:underline">← 返回账号列表</a>
+    <button type="button" class="text-sm px-3 py-1 rounded border border-purple-300 text-purple-700 hover:bg-purple-50"
+      onclick="showResetPwdModal({{ collector.id }}, '{{ collector.username|escapejs }}')">重置密码</button>
+  </div>
+
+  {% include 'spiders/includes/collector_subnav.html' %}
+
+  <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+    <div class="card-soft p-3 text-center"><div class="text-xs text-muted">账号</div><div class="font-semibold">{{ collector.username }}</div></div>
+    <div class="card-soft p-3 text-center"><div class="text-xs text-muted">显示名</div><div class="font-semibold">{{ collector.display_name|default:'-' }}</div></div>
+    <div class="card-soft p-3 text-center"><div class="text-xs text-muted">手机</div><div class="font-semibold">{{ collector.phone|default:'-' }}</div></div>
+    <div class="card-soft p-3 text-center"><div class="text-xs text-muted">有效权限数</div><div id="permCount" class="font-semibold text-blue-700">{{ active_permission_count }}</div></div>
+  </div>
+
+  <div class="card-retro p-4">
+    <h3 class="font-semibold mb-3"><i class="fas fa-plus-circle mr-1 text-blue-600"></i>分配项目权限</h3>
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div class="md:col-span-3">
+        <label class="block text-sm text-muted mb-1">平台 *</label>
+        <select id="platformSelect" class="w-full border rounded px-3 py-2">
+          <option value="">请选择平台</option>
+          {% for platform in platforms %}<option value="{{ platform }}">{{ platform }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="md:col-span-5">
+        <div class="flex items-center justify-between mb-1 gap-2">
+          <label class="text-sm text-muted shrink-0">选择项目 *</label>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" id="selectAllBtn" class="text-blue-600 hover:underline disabled:text-gray-400" disabled onclick="selectAllProjects(true)">全选</button>
+            <span class="text-gray-300">|</span>
+            <button type="button" id="clearAllBtn" class="text-blue-600 hover:underline disabled:text-gray-400" disabled onclick="selectAllProjects(false)">取消全选</button>
+            <span id="selectedCount" class="text-muted ml-1">已选 0 项</span>
+          </div>
+        </div>
+        <div id="projectCheckboxList" class="border rounded max-h-52 overflow-y-auto p-2 bg-gray-50 text-sm min-h-[8rem]">
+          <div class="text-muted text-center py-8">请先选择平台</div>
+        </div>
+        <button type="button" id="assignBtn" class="hidden mt-3 w-full px-4 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-sm" onclick="assignSelected()">
+          <i class="fas fa-check mr-1"></i>确认分配
+        </button>
+      </div>
+      <div class="md:col-span-4">
+        <label class="block text-sm text-muted mb-1">备注</label>
+        <textarea id="notes" class="w-full border rounded px-3 py-2" rows="6" placeholder="可选"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-retro p-4">
+    <h3 class="font-semibold mb-3">已分配权限</h3>
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-retro text-sm">
+        <thead class="bg-blue-50">
+          <tr>
+            <th class="px-3 py-2 text-left">项目名称</th>
+            <th class="px-3 py-2 text-left">平台</th>
+            <th class="px-3 py-2 text-left">POI ID</th>
+            <th class="px-3 py-2 text-left">授权时间</th>
+            <th class="px-3 py-2 text-left">状态</th>
+            <th class="px-3 py-2 text-left">操作</th>
+          </tr>
+        </thead>
+        <tbody id="permissionsBody" class="divide-y">
+          {% for permission in permissions %}
+          <tr data-poi-id="{{ permission.poi_id }}">
+            <td class="px-3 py-2">{{ permission.item_name }}</td>
+            <td class="px-3 py-2"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-xs">{{ permission.platform }}</span></td>
+            <td class="px-3 py-2 text-muted text-xs">{{ permission.poi_id }}</td>
+            <td class="px-3 py-2 text-muted">{{ permission.granted_at|date:'Y-m-d H:i' }}</td>
+            <td class="px-3 py-2">{% if permission.is_active %}<span class="text-green-600">有效</span>{% else %}<span class="text-gray-400">已撤销</span>{% endif %}</td>
+            <td class="px-3 py-2">{% if permission.is_active %}<button type="button" class="text-red-600 text-xs hover:underline" onclick="revoke({{ permission.id }})">撤销</button>{% else %}-{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr id="permissionsEmpty"><td colspan="6" class="text-center text-muted py-8">尚未分配任何项目权限</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="resetPwdModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">重置密码 · <span id="reset_pwd_username" class="text-blue-700"></span></h3>
+      <button type="button" class="text-gray-400 hover:text-gray-600" onclick="hideResetModal()">&times;</button>
+    </div>
+    <input type="hidden" id="reset_pwd_id" value="{{ collector.id }}">
+    <div class="space-y-3">
+      <div><label class="block text-sm text-muted mb-1">新密码 *</label><input id="reset_password" type="password" class="w-full border rounded px-3 py-2"></div>
+      <div><label class="block text-sm text-muted mb-1">确认新密码 *</label><input id="reset_password2" type="password" class="w-full border rounded px-3 py-2"></div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" class="px-4 py-2 rounded border" onclick="hideResetModal()">取消</button>
+      <button type="button" class="px-4 py-2 rounded bg-purple-600 text-white" onclick="submitResetPwd()">确认重置</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const collectorId = {{ collector.id }};
+const assignedPoiIds = new Set([
+  {% for permission in permissions %}{% if permission.is_active %}'{{ permission.poi_id|escapejs }}',{% endif %}{% endfor %}
+]);
+
+function csrf(){ return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''; }
+
+function updateSelectedCount() {
+  const checked = document.querySelectorAll('#projectCheckboxList input[type=checkbox]:checked').length;
+  document.getElementById('selectedCount').textContent = '已选 ' + checked + ' 项';
+  const assignBtn = document.getElementById('assignBtn');
+  if (checked > 0) {
+    assignBtn.classList.remove('hidden');
+    assignBtn.textContent = '';
+    assignBtn.innerHTML = '<i class="fas fa-check mr-1"></i>确认分配（' + checked + ' 项）';
+  } else {
+    assignBtn.classList.add('hidden');
+  }
+}
+
+function selectAllProjects(checked) {
+  document.querySelectorAll('#projectCheckboxList input[type=checkbox]').forEach(cb => { cb.checked = checked; });
+  updateSelectedCount();
+}
+
+function renderProjectCheckboxes(projects) {
+  const box = document.getElementById('projectCheckboxList');
+  const selectAllBtn = document.getElementById('selectAllBtn');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  box.innerHTML = '';
+  const available = projects.filter(p => !assignedPoiIds.has(String(p.poiId)));
+  if (!available.length) {
+    box.innerHTML = '<div class="text-muted text-center py-8">该平台下暂无可分配项目</div>';
+    selectAllBtn.disabled = true;
+    clearAllBtn.disabled = true;
+    updateSelectedCount();
+    return;
+  }
+  available.forEach(p => {
+    const label = document.createElement('label');
+    label.className = 'flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white cursor-pointer';
+    label.innerHTML =
+      '<input type="checkbox" class="mt-0.5 project-cb" value="' + p.poiId + '" ' +
+      'data-name="' + escapeHtml(p.itemName) + '" data-platform="' + escapeHtml(p.platform) + '">' +
+      '<span><span class="font-medium">' + escapeHtml(p.itemName) + '</span>' +
+      '<span class="text-muted text-xs block">' + escapeHtml(p.poiId) + '</span></span>';
+    label.querySelector('input').addEventListener('change', updateSelectedCount);
+    box.appendChild(label);
+  });
+  selectAllBtn.disabled = false;
+  clearAllBtn.disabled = false;
+  updateSelectedCount();
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text || '';
+  return d.innerHTML;
+}
+
+document.getElementById('platformSelect').addEventListener('change', function(){
+  const platform = this.value;
+  const box = document.getElementById('projectCheckboxList');
+  const selectAllBtn = document.getElementById('selectAllBtn');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  if (!platform) {
+    box.innerHTML = '<div class="text-muted text-center py-8">请先选择平台</div>';
+    selectAllBtn.disabled = true;
+    clearAllBtn.disabled = true;
+    updateSelectedCount();
+    return;
+  }
+  box.innerHTML = '<div class="text-muted text-center py-8">加载中...</div>';
+  selectAllBtn.disabled = true;
+  clearAllBtn.disabled = true;
+  fetch('/app-platform-projects/?platform=' + encodeURIComponent(platform))
+    .then(r => r.json())
+    .then(d => {
+      if (!d.success) {
+        box.innerHTML = '<div class="text-red-500 text-center py-8">加载失败</div>';
+        return;
+      }
+      renderProjectCheckboxes(d.projects);
+    });
+});
+
+function appendPermissionRows(items) {
+  const tbody = document.getElementById('permissionsBody');
+  document.getElementById('permissionsEmpty')?.remove();
+  items.forEach(p => {
+    assignedPoiIds.add(String(p.poi_id));
+    const existing = tbody.querySelector('tr[data-poi-id="' + p.poi_id + '"]');
+    if (existing) {
+      existing.querySelector('td:nth-child(5)').innerHTML = '<span class="text-green-600">有效</span>';
+      existing.querySelector('td:nth-child(4)').textContent = p.granted_at;
+      existing.querySelector('td:nth-child(6)').innerHTML =
+        '<button type="button" class="text-red-600 text-xs hover:underline" onclick="revoke(' + p.id + ')">撤销</button>';
+      return;
+    }
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-poi-id', p.poi_id);
+    tr.innerHTML =
+      '<td class="px-3 py-2">' + escapeHtml(p.item_name) + '</td>' +
+      '<td class="px-3 py-2"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-xs">' + escapeHtml(p.platform) + '</span></td>' +
+      '<td class="px-3 py-2 text-muted text-xs">' + escapeHtml(p.poi_id) + '</td>' +
+      '<td class="px-3 py-2 text-muted">' + escapeHtml(p.granted_at) + '</td>' +
+      '<td class="px-3 py-2"><span class="text-green-600">有效</span></td>' +
+      '<td class="px-3 py-2"><button type="button" class="text-red-600 text-xs hover:underline" onclick="revoke(' + p.id + ')">撤销</button></td>';
+    tbody.insertBefore(tr, tbody.firstChild);
+  });
+  document.getElementById('permCount').textContent = assignedPoiIds.size;
+}
+
+function assignSelected(){
+  const poi_ids = Array.from(document.querySelectorAll('#projectCheckboxList input.project-cb:checked')).map(cb => cb.value);
+  if (!poi_ids.length) { alert('请勾选至少一个项目'); return; }
+  fetch('{% url "app_assign_permission" %}', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+    body: JSON.stringify({collector_id: collectorId, poi_ids, notes: document.getElementById('notes').value})
+  }).then(r => r.json()).then(d => {
+    alert(d.message);
+    if (!d.success) return;
+    if (d.permissions && d.permissions.length) {
+      appendPermissionRows(d.permissions);
+      const platform = document.getElementById('platformSelect').value;
+      if (platform) {
+        fetch('/app-platform-projects/?platform=' + encodeURIComponent(platform))
+          .then(r => r.json())
+          .then(resp => { if (resp.success) renderProjectCheckboxes(resp.projects); });
+      }
+    }
+    document.getElementById('notes').value = '';
+  });
+}
+
+function revoke(id){
+  if(!confirm('确认撤销该权限？')) return;
+  fetch('/app-revoke-permission/' + id + '/', {method:'POST', headers:{'X-CSRFToken':csrf()}})
+    .then(r=>r.json()).then(d=>{ alert(d.message); if(d.success) location.reload(); });
+}
+
+function showResetPwdModal(id, username) {
+  document.getElementById('reset_pwd_id').value = id;
+  document.getElementById('reset_pwd_username').textContent = username;
+  document.getElementById('reset_password').value = '';
+  document.getElementById('reset_password2').value = '';
+  document.getElementById('resetPwdModal').classList.remove('hidden');
+}
+function hideResetModal() { document.getElementById('resetPwdModal').classList.add('hidden'); }
+function submitResetPwd() {
+  const id = document.getElementById('reset_pwd_id').value;
+  const pwd = document.getElementById('reset_password').value;
+  const pwd2 = document.getElementById('reset_password2').value;
+  if (pwd.length < 6) { alert('密码长度至少6位'); return; }
+  if (pwd !== pwd2) { alert('两次输入的密码不一致'); return; }
+  if (!confirm('确认重置该采集员的登录密码？')) return;
+  fetch('/app-collector-reset-password/' + id + '/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
+    body: JSON.stringify({ password: pwd, confirm_password: pwd2 })
+  }).then(r => r.json()).then(d => { alert(d.message); if (d.success) hideResetModal(); });
+}
+</script>
+{% endblock %}

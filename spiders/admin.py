@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import QusetAnswer, SpiderBase, PSentiment, UserPermissionProfile, SystemPermission, FeatureAccessLog, UserProjectPermission, MobileAPIToken
+from .models import (
+    QusetAnswer, SpiderBase, PSentiment, UserPermissionProfile, SystemPermission,
+    FeatureAccessLog, UserProjectPermission, MobileAPIToken,
+    AppCollector, AppProjectPermission, AppAPIToken, AppCommentSubmission, AppDeviceRebindRequest,
+)
 
 
 @admin.register(SpiderBase)
@@ -80,3 +84,35 @@ class MobileAPITokenAdmin(admin.ModelAdmin):
     def token_short(self, obj):
         return f"{obj.token[:10]}..." if obj.token else ""
     token_short.short_description = 'Token'
+
+
+@admin.register(AppCollector)
+class AppCollectorAdmin(admin.ModelAdmin):
+    list_display = ['username', 'display_name', 'phone', 'is_active', 'bound_device_id', 'created_at']
+    search_fields = ['username', 'display_name', 'phone']
+    list_filter = ['is_active', 'created_at']
+
+
+@admin.register(AppProjectPermission)
+class AppProjectPermissionAdmin(admin.ModelAdmin):
+    list_display = ['collector', 'item_name', 'platform', 'poi_id', 'is_active', 'granted_at']
+    list_filter = ['platform', 'is_active']
+    search_fields = ['collector__username', 'item_name', 'poi_id']
+
+
+@admin.register(AppAPIToken)
+class AppAPITokenAdmin(admin.ModelAdmin):
+    list_display = ['collector', 'token_short', 'device_id', 'is_active', 'expires_at', 'last_used']
+    list_filter = ['is_active', 'expires_at']
+    search_fields = ['collector__username', 'token']
+
+    def token_short(self, obj):
+        return f"{obj.token[:10]}..." if obj.token else ""
+    token_short.short_description = 'Token'
+
+
+@admin.register(AppDeviceRebindRequest)
+class AppDeviceRebindRequestAdmin(admin.ModelAdmin):
+    list_display = ['request_no', 'collector', 'status', 'new_device_id', 'created_at', 'reviewed_by']
+    list_filter = ['status', 'created_at']
+    search_fields = ['request_no', 'collector__username']

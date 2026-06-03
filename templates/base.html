@@ -148,6 +148,23 @@
                                 用户管理
                             </a>
                         </li>
+                        {% if user.is_staff %}
+                        <li class="nav-item mt-2">
+                            <div class="nav-link disabled text-white-50 small text-uppercase py-1">采集用户管理</div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'app_collector_management' or request.resolver_match.url_name == 'app_collector_permissions' %}active{% endif %}" href="{% url 'app_collector_management' %}">
+                                <i class="fas fa-user-cog me-2"></i>
+                                账号与权限
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'app_device_rebind_list' %}active{% endif %}" href="{% url 'app_device_rebind_list' %}">
+                                <i class="fas fa-exchange-alt me-2"></i>
+                                设备换绑审批
+                            </a>
+                        </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'operation_logs' %}active{% endif %}" href="{% url 'operation_logs' %}">
                                 <i class="fas fa-list-alt me-2"></i>

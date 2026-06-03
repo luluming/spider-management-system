@@ -1,6 +1,9 @@
 from django.urls import path
+from django.views.generic import RedirectView
 from . import views
 from . import permission_views
+from . import collector_views
+from .mobile import views as mobile_views
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -35,9 +38,41 @@ urlpatterns = [
     path('assign-project-permission/', views.assign_project_permission, name='assign_project_permission'),
     path('revoke-project-permission/<int:permission_id>/', views.revoke_project_permission, name='revoke_project_permission'),
     path('get-platform-projects/', views.get_platform_projects, name='get_platform_projects'),
-    # 手机APP API接口
+    # 手机APP API接口（旧版，保留兼容）
     path('api/mobile/login/', views.mobile_api_login, name='mobile_api_login'),
     path('api/mobile/user-projects/', views.mobile_api_user_projects, name='mobile_api_user_projects'),
+    # App 采集员 API v1
+    path('api/v1/mobile/captcha/', mobile_views.mobile_captcha, name='mobile_v1_captcha'),
+    path('api/v1/mobile/login/', mobile_views.mobile_login, name='mobile_v1_login'),
+    path('api/v1/mobile/logout/', mobile_views.mobile_logout, name='mobile_v1_logout'),
+    path('api/v1/mobile/projects/', mobile_views.mobile_projects, name='mobile_v1_projects'),
+    path('api/v1/mobile/comments/', mobile_views.mobile_comments, name='mobile_v1_comments'),
+    path('api/v1/mobile/comments/<str:comment_id>/', mobile_views.mobile_comment_detail, name='mobile_v1_comment_detail'),
+    path('api/v1/mobile/device/rebind/request/', mobile_views.mobile_rebind_request, name='mobile_v1_rebind_request'),
+    path('api/v1/mobile/device/rebind/pending/', mobile_views.mobile_rebind_pending, name='mobile_v1_rebind_pending'),
+    path('api/v1/mobile/device/rebind/verify/', mobile_views.mobile_rebind_verify, name='mobile_v1_rebind_verify'),
+    path('api/v1/mobile/device/rebind/status/', mobile_views.mobile_rebind_status, name='mobile_v1_rebind_status'),
+    path('api/v1/mobile/device/rebind/complete/', mobile_views.mobile_rebind_complete, name='mobile_v1_rebind_complete'),
+    path('api/v1/mobile/device/rebind/cancel/', mobile_views.mobile_rebind_cancel, name='mobile_v1_rebind_cancel'),
+    # 采集用户管理板块
+    path('collector-management/', RedirectView.as_view(pattern_name='app_collector_management', permanent=False)),
+    path('collector-management/accounts/', collector_views.app_collector_management, name='app_collector_management'),
+    path('collector-management/permissions/<int:collector_id>/', collector_views.app_collector_permissions, name='app_collector_permissions'),
+    path('collector-management/device-rebind/', collector_views.app_device_rebind_list, name='app_device_rebind_list'),
+    path('app-collector-add/', collector_views.app_collector_add, name='app_collector_add'),
+    path('app-collector-edit/<int:collector_id>/', collector_views.app_collector_edit, name='app_collector_edit'),
+    path('app-collector-reset-password/<int:collector_id>/', collector_views.app_collector_reset_password, name='app_collector_reset_password'),
+    path('app-collector-unlock/<int:collector_id>/', collector_views.app_collector_unlock, name='app_collector_unlock'),
+    path('app-collector-unbind/<int:collector_id>/', collector_views.app_collector_unbind_device, name='app_collector_unbind_device'),
+    path('app-assign-permission/', collector_views.app_assign_permission, name='app_assign_permission'),
+    path('app-revoke-permission/<int:permission_id>/', collector_views.app_revoke_permission, name='app_revoke_permission'),
+    path('app-platform-projects/', collector_views.app_platform_projects, name='app_platform_projects'),
+    path('app-device-rebind-approve/<int:request_id>/', collector_views.app_device_rebind_approve, name='app_device_rebind_approve'),
+    path('app-device-rebind-reject/<int:request_id>/', collector_views.app_device_rebind_reject, name='app_device_rebind_reject'),
+    # 旧路径兼容跳转
+    path('app-collector-management/', RedirectView.as_view(pattern_name='app_collector_management', permanent=False)),
+    path('app-collector-permissions/<int:collector_id>/', collector_views.redirect_collector_permissions),
+    path('app-device-rebind/', RedirectView.as_view(pattern_name='app_device_rebind_list', permanent=False)),
     path('add-comment/', views.add_comment, name='add_comment'),
     path('get-comment-detail/<str:comment_id>/', views.get_comment_detail, name='get_comment_detail'),
     path('edit-comment/<str:comment_id>/', views.edit_comment, name='edit_comment'),

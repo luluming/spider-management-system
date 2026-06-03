@@ -96,17 +96,22 @@ class SpiderBase(models.Model):
 
 
 class QusetAnswer(models.Model):
-    """用户问答评论表"""
-    comment_id = models.CharField(max_length=255, primary_key=True)
+    """用户问答评论表（字段与生产库 quset_answer 对齐）"""
+    comment_id = models.CharField(max_length=500, primary_key=True)
     poiId = models.CharField(max_length=255, db_column='poiId')
     user_name = models.CharField(max_length=255, blank=True)
     comment_content = models.TextField(blank=True)
-    comment_grade = models.FloatField(default=0.0)
+    comment_grade = models.CharField(max_length=255, blank=True, default='0')
+    comment_num = models.FloatField(default=0.0)
     like_num = models.IntegerField(default=0)
     reply_num = models.IntegerField(default=0)
+    c_num = models.IntegerField(default=0)
+    user_id = models.CharField(max_length=255, blank=True, default='')
+    reply_content = models.TextField(blank=True, default='')
+    reply_video = models.PositiveIntegerField(default=0)
+    reply_img = models.IntegerField(default=0)
     release_time = models.DateTimeField()
-    user_id = models.CharField(max_length=255, blank=True)
-    comment_num = models.IntegerField(default=0)
+    create_time = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'quset_answer'
@@ -237,8 +242,185 @@ class UserProjectPermission(models.Model):
         return f"{self.user.username} - {self.project_name} ({self.platform})"
 
 
+class AppCollector(models.Model):
+    """App 采集员账号（与 Web Django User 独立）"""
+    username = models.CharField(max_length=150, unique=True, verbose_name='登录账号')
+    password = models.CharField(max_length=128, verbose_name='密码哈希')
+    display_name = models.CharField(max_length=150, blank=True, default='', verbose_name='显示名')
+    phone = models.CharField(max_length=20, blank=True, default='', verbose_name='手机号')
+    is_active = models.BooleanField(default=True, verbose_name='是否启用')
+    failed_login_count = models.PositiveIntegerField(default=0, verbose_name='连续登录失败次数')
+    locked_until = models.DateTimeField(null=True, blank=True, verbose_name='锁定截止时间')
+    last_login_at = models.DateTimeField(null=True, blank=True, verbose_name='最近登录时间')
+    last_login_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name='最近登录IP')
+    bound_device_id = models.CharField(max_length=255, blank=True, default='', verbose_name='绑定设备ID')
+    bound_device_info = models.CharField(max_length=500, blank=True, default='', verbose_name='绑定设备信息')
+    device_bound_at = models.DateTimeField(null=True, blank=True, verbose_name='设备绑定时间')
+    created_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='created_collectors', verbose_name='创建人',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'app_collector'
+        verbose_name = 'App采集员'
+        verbose_name_plural = 'App采集员'
+
+    def __str__(self):
+        return self.username
+
+    def set_password(self, raw_password):
+        from django.contrib.auth.hashers import make_password
+        self.password = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        from django.contrib.auth.hashers import check_password
+        return check_password(raw_password, self.password)
+
+    def is_locked(self):
+        return bool(self.locked_until and timezone.now() < self.locked_until)
+
+    def record_failed_login(self):
+        from datetime import timedelta
+        self.failed_login_count += 1
+        if self.failed_login_count >= 5:
+            self.locked_until = timezone.now() + timedelta(minutes=30)
+        self.save(update_fields=['failed_login_count', 'locked_until', 'updated_at'])
+
+    def reset_login_failures(self):
+        self.failed_login_count = 0
+        self.locked_until = None
+        self.save(update_fields=['failed_login_count', 'locked_until', 'updated_at'])
+
+    def bind_device(self, device_id, device_info=''):
+        self.bound_device_id = device_id or ''
+        self.bound_device_info = device_info or ''
+        self.device_bound_at = timezone.now()
+        self.save(update_fields=['bound_device_id', 'bound_device_info', 'device_bound_at', 'updated_at'])
+
+    def clear_device_binding(self):
+        self.bound_device_id = ''
+        self.bound_device_info = ''
+        self.device_bound_at = None
+        self.save(update_fields=['bound_device_id', 'bound_device_info', 'device_bound_at', 'updated_at'])
+
+
+class AppProjectPermission(models.Model):
+    """App 采集员项目权限"""
+    collector = models.ForeignKey(AppCollector, on_delete=models.CASCADE, related_name='project_permissions')
+    poi_id = models.CharField(max_length=255, verbose_name='POI ID')
+    item_name = models.CharField(max_length=255, verbose_name='项目名称')
+    platform = models.CharField(max_length=100, verbose_name='平台')
+    is_active = models.BooleanField(default=True, verbose_name='是否有效')
+    granted_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='granted_app_permissions', verbose_name='授权人',
+    )
+    granted_at = models.DateTimeField(auto_now_add=True, verbose_name='授权时间')
+    notes = models.TextField(blank=True, default='', verbose_name='备注')
+
+    class Meta:
+        db_table = 'app_project_permission'
+        unique_together = [('collector', 'poi_id')]
+        verbose_name = 'App项目权限'
+        verbose_name_plural = 'App项目权限'
+
+    def __str__(self):
+        return f"{self.collector.username} - {self.item_name} ({self.platform})"
+
+
+class AppAPIToken(models.Model):
+    """App API Token"""
+    collector = models.ForeignKey(AppCollector, on_delete=models.CASCADE, related_name='api_tokens')
+    token = models.CharField(max_length=255, unique=True)
+    device_id = models.CharField(max_length=255, blank=True, default='')
+    expires_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    last_used = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'app_api_token'
+        verbose_name = 'App API Token'
+        verbose_name_plural = 'App API Tokens'
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"{self.collector.username} - {self.token[:10]}..."
+
+
+class AppCommentSubmission(models.Model):
+    """记录 App 采集员上报的评论归属"""
+    comment_id = models.CharField(max_length=32, primary_key=True)
+    collector = models.ForeignKey(AppCollector, on_delete=models.CASCADE, related_name='comment_submissions')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'app_comment_submission'
+        verbose_name = 'App评论上报记录'
+        verbose_name_plural = 'App评论上报记录'
+
+
+class AppDeviceRebindRequest(models.Model):
+    """App 设备换绑申请"""
+    STATUS_PENDING_OLD = 'pending_old_verify'
+    STATUS_PENDING_ADMIN = 'pending_admin'
+    STATUS_APPROVED = 'approved'
+    STATUS_COMPLETED = 'completed'
+    STATUS_REJECTED = 'rejected'
+    STATUS_EXPIRED = 'expired'
+    STATUS_CANCELLED = 'cancelled'
+    STATUS_CHOICES = [
+        (STATUS_PENDING_OLD, '待旧设备验证'),
+        (STATUS_PENDING_ADMIN, '待管理员审批'),
+        (STATUS_APPROVED, '已批准'),
+        (STATUS_COMPLETED, '已完成'),
+        (STATUS_REJECTED, '已拒绝'),
+        (STATUS_EXPIRED, '已过期'),
+        (STATUS_CANCELLED, '已取消'),
+    ]
+    TERMINAL_STATUSES = frozenset({
+        STATUS_COMPLETED, STATUS_REJECTED, STATUS_EXPIRED, STATUS_CANCELLED,
+    })
+
+    request_no = models.CharField(max_length=32, unique=True)
+    collector = models.ForeignKey(AppCollector, on_delete=models.CASCADE, related_name='rebind_requests')
+    old_device_id = models.CharField(max_length=255, blank=True, default='')
+    new_device_id = models.CharField(max_length=255)
+    new_device_info = models.CharField(max_length=500, blank=True, default='')
+    verify_code_hash = models.CharField(max_length=128)
+    verify_code_expires_at = models.DateTimeField()
+    verify_attempts = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_PENDING_OLD)
+    old_verified_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='reviewed_rebind_requests',
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reject_reason = models.TextField(blank=True, default='')
+    approved_expires_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    request_ip = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'app_device_rebind_request'
+        verbose_name = 'App设备换绑申请'
+        verbose_name_plural = 'App设备换绑申请'
+
+    def __str__(self):
+        return self.request_no
+
+
 class MobileAPIToken(models.Model):
-    """手机APP API令牌表"""
+    """手机APP API令牌表（旧版，关联 Web User，保留兼容）"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='用户')
     token = models.CharField(max_length=255, unique=True, verbose_name='API令牌')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')

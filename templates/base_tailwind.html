@@ -66,6 +66,19 @@
                             <i class="fas fa-users mr-3"></i>
                             用户管理
                         </a>
+                        {% if user.is_staff %}
+                        <div class="pt-4 mt-2 border-t border-blue-500/40">
+                            <p class="px-2 text-xs font-semibold text-blue-200 uppercase tracking-wider mb-1">采集用户管理</p>
+                            <a href="{% url 'app_collector_management' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md {% if request.resolver_match.url_name == 'app_collector_management' or request.resolver_match.url_name == 'app_collector_permissions' %}bg-blue-700 text-white{% else %}text-blue-100 hover:bg-blue-700 hover:text-white{% endif %} transition-colors duration-200">
+                                <i class="fas fa-user-cog mr-3"></i>
+                                账号与权限
+                            </a>
+                            <a href="{% url 'app_device_rebind_list' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md {% if request.resolver_match.url_name == 'app_device_rebind_list' %}bg-blue-700 text-white{% else %}text-blue-100 hover:bg-blue-700 hover:text-white{% endif %} transition-colors duration-200">
+                                <i class="fas fa-exchange-alt mr-3"></i>
+                                设备换绑审批
+                            </a>
+                        </div>
+                        {% endif %}
                         <a href="{% url 'operation_logs' %}" class="group flex items-center px-2 py-2 text-sm font-medium rounded-md {% if request.resolver_match.url_name == 'operation_logs' %}bg-blue-700 text-white{% else %}text-blue-100 hover:bg-blue-700 hover:text-white{% endif %} transition-colors duration-200">
                             <i class="fas fa-list-alt mr-3"></i>
                             操作日志
