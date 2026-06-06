@@ -74,3 +74,9 @@ body {
 
 /* Small utility */
 .text-retro-heading { color: var(--retro-heading) !important; }
+
+/* Tailwind CDN 未内置 primary-*，与 theme/_tokens.css 对齐 */
+.bg-primary-600 { background-color: #2563eb !important; }
+.bg-primary-700 { background-color: #1d4ed8 !important; }
+.text-primary-600 { color: #2563eb !important; }
+.hover\:bg-primary-700:hover { background-color: #1d4ed8 !important; }

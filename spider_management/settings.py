@@ -156,12 +156,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Mobile App API settings
 MOBILE_API_TOKEN_DAYS = 30
+MOBILE_LOGIN_LOCK_ENABLED = False  # 调试阶段关闭登录失败锁定，上线前改回 True
+MOBILE_LOGIN_CAPTCHA_REQUIRED = False  # 调试阶段登录可不传验证码，上线前改回 True
 MOBILE_LOGIN_MAX_FAILURES = 5
 MOBILE_LOGIN_LOCK_MINUTES = 30
 MOBILE_REBIND_VERIFY_MINUTES = 15
 MOBILE_REBIND_ADMIN_HOURS = 24
 MOBILE_REBIND_COMPLETE_HOURS = 2
 MOBILE_REBIND_MAX_VERIFY_ATTEMPTS = 5
+MOBILE_REBIND_SKIP_OLD_VERIFY = True  # 调试阶段跳过旧设备验证，直接进入待管理员审批
+MOBILE_DEVICE_REGISTER_REQUIRES_ADMIN = True  # 调试阶段新设备须管理员审批后才能登录
 
 # Cache configuration (file-based: shared across uWSGI workers)
 CACHE_DIR = BASE_DIR / 'run' / 'cache'

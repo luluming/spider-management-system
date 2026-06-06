@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -16,6 +17,7 @@ from spiders.models import (
     AppProjectPermission,
     PSentiment,
 )
+from spiders.mobile.utils import normalize_device_id
 
 
 def staff_required(view):
@@ -25,7 +27,7 @@ def staff_required(view):
 def _collector_page_context(**extra):
     ctx = {
         'pending_rebind_count': AppDeviceRebindRequest.objects.filter(
-            status=AppDeviceRebindRequest.STATUS_PENDING_ADMIN,
+            status__in=AppDeviceRebindRequest.ADMIN_PENDING_STATUSES,
         ).count(),
     }
     ctx.update(extra)
@@ -162,7 +164,53 @@ def app_collector_unlock(request, collector_id):
 def app_collector_unbind_device(request, collector_id):
     collector = get_object_or_404(AppCollector, id=collector_id)
     collector.clear_device_binding()
+    OperationLog.objects.create(
+        user=request.user,
+        operation='解绑App采集员设备',
+        action='update',
+        description=f'清除设备绑定: {collector.username}',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
     return JsonResponse({'success': True, 'message': '设备绑定已清除'})
+
+
+@staff_required
+@csrf_exempt
+@require_http_methods(['POST'])
+def app_collector_bind_device(request, collector_id):
+    """管理员手动绑定/更换设备"""
+    collector = get_object_or_404(AppCollector, id=collector_id)
+    try:
+        data = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'JSON 格式错误'})
+
+    device_id = normalize_device_id(data.get('device_id', ''))
+    device_info = str(data.get('device_info', '') or '').strip()
+    if not device_id:
+        return JsonResponse({'success': False, 'message': '设备 ID 不能为空'})
+
+    collector.bind_device(device_id, device_info)
+    AppDeviceRebindRequest.objects.filter(
+        collector=collector,
+        status__in=AppDeviceRebindRequest.ADMIN_PENDING_STATUSES,
+    ).update(status=AppDeviceRebindRequest.STATUS_CANCELLED)
+
+    OperationLog.objects.create(
+        user=request.user,
+        operation='绑定App采集员设备',
+        action='update',
+        description=f'绑定设备 {device_id}: {collector.username}',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
+    return JsonResponse({
+        'success': True,
+        'message': '设备绑定成功',
+        'device_id': collector.bound_device_id,
+        'device_info': collector.bound_device_info,
+    })
 
 
 @staff_required
@@ -271,9 +319,11 @@ def app_platform_projects(request):
 
 @staff_required
 def app_device_rebind_list(request):
-    status = request.GET.get('status', AppDeviceRebindRequest.STATUS_PENDING_ADMIN)
+    status = request.GET.get('status', 'pending')
     reqs = AppDeviceRebindRequest.objects.select_related('collector', 'reviewed_by').order_by('-created_at')
-    if status and status != 'all':
+    if status == 'pending':
+        reqs = reqs.filter(status__in=AppDeviceRebindRequest.ADMIN_PENDING_STATUSES)
+    elif status and status != 'all':
         reqs = reqs.filter(status=status)
     return render(request, 'spiders/app_device_rebind_list.html', _collector_page_context(
         requests=reqs[:200],
@@ -286,16 +336,38 @@ def app_device_rebind_list(request):
 @csrf_exempt
 @require_http_methods(['POST'])
 def app_device_rebind_approve(request, request_id):
-    req = get_object_or_404(AppDeviceRebindRequest, id=request_id)
-    if req.status != AppDeviceRebindRequest.STATUS_PENDING_ADMIN:
+    req = get_object_or_404(AppDeviceRebindRequest.objects.select_related('collector'), id=request_id)
+    if req.status not in AppDeviceRebindRequest.ADMIN_PENDING_STATUSES:
         return JsonResponse({'success': False, 'message': '当前状态不可审批'})
-    hours = 2
-    req.status = AppDeviceRebindRequest.STATUS_APPROVED
+
+    collector = req.collector
+    collector.bind_device(req.new_device_id, req.new_device_info)
+    collector.reset_login_failures()
+
+    req.status = AppDeviceRebindRequest.STATUS_COMPLETED
     req.reviewed_by = request.user
     req.reviewed_at = timezone.now()
-    req.approved_expires_at = timezone.now() + timedelta(hours=hours)
+    req.completed_at = timezone.now()
+    req.approved_expires_at = timezone.now()
     req.save()
-    return JsonResponse({'success': True, 'message': f'已批准，请在 {hours} 小时内完成绑定'})
+
+    OperationLog.objects.create(
+        user=request.user,
+        operation='审批App设备注册/换绑',
+        action='update',
+        description=(
+            f'已批准并绑定设备 {req.new_device_id} → 采集员 {collector.username} '
+            f'（单号 {req.request_no}）'
+        ),
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    )
+    return JsonResponse({
+        'success': True,
+        'message': f'已批准，设备已绑定到账号「{collector.username}」，App 可直接登录',
+        'collector_id': collector.id,
+        'device_id': collector.bound_device_id,
+    })
 
 
 @staff_required
@@ -303,7 +375,7 @@ def app_device_rebind_approve(request, request_id):
 @require_http_methods(['POST'])
 def app_device_rebind_reject(request, request_id):
     req = get_object_or_404(AppDeviceRebindRequest, id=request_id)
-    if req.status != AppDeviceRebindRequest.STATUS_PENDING_ADMIN:
+    if req.status not in AppDeviceRebindRequest.ADMIN_PENDING_STATUSES:
         return JsonResponse({'success': False, 'message': '当前状态不可审批'})
     try:
         data = json.loads(request.body.decode('utf-8') or '{}')

@@ -228,6 +228,29 @@ comment_id = MD5( user_name + comment_grade + comment_content )
 - 若 `comment_id` 已存在且属于其他采集员 → 403  
 - 未授权 poiId → 403  
 
+**成功响应：**
+
+```json
+{
+  "success": true,
+  "message": "保存成功",
+  "data": {
+    "comment": {
+      "comment_id": "a1b2c3d4e5f6789012345678901234ab",
+      "poiId": "1234567890",
+      "user_name": "游客张三",
+      "comment_content": "景色不错，值得推荐",
+      "comment_grade": "5",
+      "release_time": "2026-06-03 14:30:00",
+      "create_time": "2026-06-03 14:35:00"
+    }
+  }
+}
+```
+
+**专用插入路径（与 POST `/comments/` 相同）：** `POST /quset-answer/`  
+详见：`docs/QusetAnswer_INSERT_API.md`
+
 ---
 
 ### GET `/comments/`

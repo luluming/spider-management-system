@@ -91,8 +91,12 @@ class MobileAPITestCase(TestCase):
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
         self.assertTrue(body['success'])
-        self.assertEqual(body['data']['total_count'], 1)
-        self.assertEqual(body['data']['platforms'][0]['items'][0]['poiId'], self.poi_id)
+        self.assertEqual(body['total_count'], 1)
+        self.assertIsInstance(body['data'], list)
+        self.assertEqual(len(body['data']), 1)
+        self.assertEqual(body['data'][0]['poiId'], self.poi_id)
+        self.assertEqual(body['projects'][0]['poiId'], self.poi_id)
+        self.assertEqual(body['platforms'][0]['items'][0]['poiId'], self.poi_id)
 
         resp = self.client.post(f'{self.base}/logout/', **self._auth_headers(token))
         self.assertEqual(resp.status_code, 200)
@@ -150,6 +154,28 @@ class MobileAPITestCase(TestCase):
         self.assertEqual(record.comment_content, '更新后的评论')
         self.assertEqual(record.like_num, 10)
 
+    def test_quset_answer_insert_alias(self):
+        login_resp = self._login()
+        token = login_resp.json()['data']['token']
+        headers = self._auth_headers(token)
+        resp = self.client.post(
+            f'{self.base}/quset-answer/',
+            data=json.dumps({
+                'poiId': self.poi_id,
+                'user_name': '别名接口用户',
+                'comment_content': 'quset-answer 别名路径测试',
+                'comment_grade': '4',
+                'release_time': timezone.localtime().strftime('%Y-%m-%d %H:%M:%S'),
+            }),
+            content_type='application/json',
+            **headers,
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        body = resp.json()
+        self.assertTrue(body['success'], body)
+        comment_id = body['data']['comment']['comment_id']
+        self.assertTrue(QusetAnswer.objects.filter(comment_id=comment_id).exists())
+
     def test_comments_forbidden_poi(self):
         login_resp = self._login()
         token = login_resp.json()['data']['token']
@@ -176,11 +202,14 @@ class MobileAPITestCase(TestCase):
         self.collector.bound_device_id = 'other-device'
         self.collector.save(update_fields=['bound_device_id'])
 
-        resp = self._login()
+        resp = self._login(device_id='new-device-from-login')
         self.assertEqual(resp.status_code, 403)
         body = resp.json()
         self.assertFalse(body['success'])
-        self.assertEqual(body['data']['error_code'], 'DEVICE_MISMATCH')
+        self.assertEqual(body['data']['error_code'], 'PENDING_ADMIN')
+        self.assertEqual(body['data']['new_device_id'], 'new-device-from-login')
+        req = AppDeviceRebindRequest.objects.get(id=body['data']['request_id'])
+        self.assertEqual(req.status, AppDeviceRebindRequest.STATUS_PENDING_ADMIN)
 
     def test_rebind_flow(self):
         old_device = 'old-device-abc'

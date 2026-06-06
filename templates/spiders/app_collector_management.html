@@ -6,9 +6,9 @@
 <div class="space-y-4">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h2 class="text-xl font-semibold font-serif text-retro-heading">
-      <i class="fas fa-mobile-alt mr-2 text-primary-600"></i>采集用户管理 · 账号与权限
+      <i class="fas fa-mobile-alt mr-2 text-blue-600"></i>采集用户管理 · 账号与权限
     </h2>
-    <button type="button" class="px-4 py-2 rounded-md bg-primary-600 text-white text-sm hover:bg-blue-700" onclick="showAddModal()">
+    <button type="button" class="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold shadow hover:bg-blue-700 shrink-0" onclick="showAddModal()">
       <i class="fas fa-plus mr-1"></i>新增采集员
     </button>
   </div>
@@ -16,7 +16,12 @@
   {% include 'spiders/includes/collector_subnav.html' %}
 
   <div class="card-retro p-4">
-    <p class="text-sm text-muted mb-3">采集员账号仅用于 App 登录，与 Web 后台用户独立。新建时需设置初始密码；已有账号可通过「重置密码」修改登录密码。</p>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <p class="text-sm text-muted flex-1 min-w-[200px]">采集员账号仅用于 App 登录，与 Web 后台用户独立。设备绑定方式：① 管理员在此页手动绑定；② App 提交注册/换绑后在「设备换绑审批」中批准；③ 关闭审批模式后 App 首次登录自动绑定。</p>
+      <button type="button" class="px-3 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold shadow hover:bg-blue-700 shrink-0 lg:hidden" onclick="showAddModal()">
+        <i class="fas fa-plus mr-1"></i>新增采集员
+      </button>
+    </div>
     <div class="overflow-x-auto">
       <table class="min-w-full table-retro text-sm">
         <thead class="bg-blue-50">
@@ -39,7 +44,16 @@
             <td class="px-3 py-2">{{ c.display_name|default:'-' }}</td>
             <td class="px-3 py-2">{{ c.phone|default:'-' }}</td>
             <td class="px-3 py-2">{% if c.is_active %}<span class="px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs">启用</span>{% else %}<span class="px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs">禁用</span>{% endif %}</td>
-            <td class="px-3 py-2"><span class="text-xs text-muted">{{ c.bound_device_id|default:'未绑定'|truncatechars:20 }}</span></td>
+            <td class="px-3 py-2 max-w-xs">
+              {% if c.bound_device_id %}
+              <div class="text-xs font-mono break-all text-gray-800" title="设备 ID：{{ c.bound_device_id }}">{{ c.bound_device_id }}</div>
+              {% if c.bound_device_info %}
+              <div class="text-xs text-muted mt-1 break-all" title="设备描述：{{ c.bound_device_info }}">描述：{{ c.bound_device_info }}</div>
+              {% endif %}
+              {% else %}
+              <span class="text-xs text-orange-600">未绑定</span>
+              {% endif %}
+            </td>
             <td class="px-3 py-2 text-muted">{{ c.created_at|date:'Y-m-d H:i' }}</td>
             <td class="px-3 py-2">
               <div class="flex flex-wrap gap-1">
@@ -48,13 +62,27 @@
                   onclick="showResetPwdModal({{ c.id }}, '{{ c.username|escapejs }}')">重置密码</button>
                 <button type="button" class="px-2 py-1 text-xs rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
                   onclick="showEditModal({{ c.id }}, '{{ c.username|escapejs }}', '{{ c.display_name|default:""|escapejs }}', '{{ c.phone|default:""|escapejs }}', {{ c.is_active|yesno:'true,false' }})">编辑</button>
+                <button type="button" class="px-2 py-1 text-xs rounded border border-green-300 text-green-700 hover:bg-green-50 btn-bind-device"
+                  data-id="{{ c.id }}"
+                  data-username="{{ c.username|escape }}"
+                  data-device-id="{{ c.bound_device_id|default:''|escape }}"
+                  data-device-info="{{ c.bound_device_info|default:''|escape }}">
+                  {% if c.bound_device_id %}更换设备{% else %}绑定设备{% endif %}
+                </button>
                 <button type="button" class="px-2 py-1 text-xs rounded border border-gray-300 text-gray-600 hover:bg-gray-50" onclick="unlock({{ c.id }})">解锁</button>
+                {% if c.bound_device_id %}
                 <button type="button" class="px-2 py-1 text-xs rounded border border-orange-300 text-orange-700 hover:bg-orange-50" onclick="unbind({{ c.id }})">解绑设备</button>
+                {% endif %}
               </div>
             </td>
           </tr>
           {% empty %}
-          <tr><td colspan="8" class="text-center text-muted py-8">暂无采集员，请点击右上角新增</td></tr>
+          <tr><td colspan="8" class="text-center text-muted py-8">
+            暂无采集员
+            <button type="button" class="ml-2 px-3 py-1 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700" onclick="showAddModal()">
+              <i class="fas fa-plus mr-1"></i>新增采集员
+            </button>
+          </td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -78,7 +106,7 @@
     </div>
     <div class="mt-5 flex justify-end gap-2">
       <button type="button" class="px-4 py-2 rounded border" onclick="hideModal('addModal')">取消</button>
-      <button type="button" class="px-4 py-2 rounded bg-primary-600 text-white" onclick="submitAdd()">保存</button>
+      <button type="button" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700" onclick="submitAdd()">保存</button>
     </div>
   </div>
 </div>
@@ -103,6 +131,26 @@
   </div>
 </div>
 
+<!-- 绑定设备 -->
+<div id="bindModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+  <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">绑定设备 · <span id="bind_username" class="text-blue-700"></span></h3>
+      <button type="button" class="text-gray-400 hover:text-gray-600" onclick="hideModal('bindModal')">&times;</button>
+    </div>
+    <p class="text-sm text-muted mb-3">填写 App 端的设备唯一 ID（与 App 登录时上报的 <code class="text-xs bg-gray-100 px-1 rounded">device_id</code> 一致）。绑定后该账号仅能在该设备登录。</p>
+    <input type="hidden" id="bind_id">
+    <div class="space-y-3">
+      <div><label class="block text-sm text-muted mb-1">设备 ID *</label><input id="bind_device_id" class="w-full border rounded px-3 py-2 font-mono text-sm" placeholder="如 uuid 或 Android ID"></div>
+      <div><label class="block text-sm text-muted mb-1">设备描述</label><input id="bind_device_info" class="w-full border rounded px-3 py-2" placeholder="如 Android 14 / 小米14"></div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+      <button type="button" class="px-4 py-2 rounded border" onclick="hideModal('bindModal')">取消</button>
+      <button type="button" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700" onclick="submitBind()">确认绑定</button>
+    </div>
+  </div>
+</div>
+
 <!-- 编辑资料 -->
 <div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
   <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
@@ -121,7 +169,7 @@
     </div>
     <div class="mt-5 flex justify-end gap-2">
       <button type="button" class="px-4 py-2 rounded border" onclick="hideModal('editModal')">取消</button>
-      <button type="button" class="px-4 py-2 rounded bg-primary-600 text-white" onclick="submitEdit()">保存</button>
+      <button type="button" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700" onclick="submitEdit()">保存</button>
     </div>
   </div>
 </div>
@@ -188,6 +236,36 @@ function submitEdit() {
       display_name: document.getElementById('edit_display_name').value.trim(),
       phone: document.getElementById('edit_phone').value.trim(),
       is_active: document.getElementById('edit_is_active').checked,
+    })
+  }).then(r => r.json()).then(d => { alert(d.message); if (d.success) location.reload(); });
+}
+function showBindModal(id, username, deviceId, deviceInfo) {
+  document.getElementById('bind_id').value = id;
+  document.getElementById('bind_username').textContent = username;
+  document.getElementById('bind_device_id').value = deviceId || '';
+  document.getElementById('bind_device_info').value = deviceInfo || '';
+  document.getElementById('bindModal').classList.remove('hidden');
+}
+document.querySelectorAll('.btn-bind-device').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    showBindModal(
+      btn.dataset.id,
+      btn.dataset.username || '',
+      btn.dataset.deviceId || '',
+      btn.dataset.deviceInfo || ''
+    );
+  });
+});
+function submitBind() {
+  const id = document.getElementById('bind_id').value;
+  const deviceId = document.getElementById('bind_device_id').value.trim();
+  if (!deviceId) { alert('请填写设备 ID'); return; }
+  fetch('/app-collector-bind/' + id + '/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf()},
+    body: JSON.stringify({
+      device_id: deviceId,
+      device_info: document.getElementById('bind_device_info').value.trim(),
     })
   }).then(r => r.json()).then(d => { alert(d.message); if (d.success) location.reload(); });
 }

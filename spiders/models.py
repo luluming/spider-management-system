@@ -280,13 +280,21 @@ class AppCollector(models.Model):
         return check_password(raw_password, self.password)
 
     def is_locked(self):
+        from django.conf import settings
+        if not getattr(settings, 'MOBILE_LOGIN_LOCK_ENABLED', True):
+            return False
         return bool(self.locked_until and timezone.now() < self.locked_until)
 
     def record_failed_login(self):
         from datetime import timedelta
+        from django.conf import settings
+        if not getattr(settings, 'MOBILE_LOGIN_LOCK_ENABLED', True):
+            return
+        max_failures = getattr(settings, 'MOBILE_LOGIN_MAX_FAILURES', 5)
+        lock_minutes = getattr(settings, 'MOBILE_LOGIN_LOCK_MINUTES', 30)
         self.failed_login_count += 1
-        if self.failed_login_count >= 5:
-            self.locked_until = timezone.now() + timedelta(minutes=30)
+        if self.failed_login_count >= max_failures:
+            self.locked_until = timezone.now() + timedelta(minutes=lock_minutes)
         self.save(update_fields=['failed_login_count', 'locked_until', 'updated_at'])
 
     def reset_login_failures(self):
@@ -386,6 +394,9 @@ class AppDeviceRebindRequest(models.Model):
     ]
     TERMINAL_STATUSES = frozenset({
         STATUS_COMPLETED, STATUS_REJECTED, STATUS_EXPIRED, STATUS_CANCELLED,
+    })
+    ADMIN_PENDING_STATUSES = frozenset({
+        STATUS_PENDING_OLD, STATUS_PENDING_ADMIN,
     })
 
     request_no = models.CharField(max_length=32, unique=True)

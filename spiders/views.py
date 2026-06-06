@@ -2843,65 +2843,95 @@ def get_platform_projects(request):
 
 @csrf_exempt
 def mobile_api_login(request):
-    """手机APP登录接口"""
-    if request.method == 'POST':
-        try:
-            import json
-            data = json.loads(request.body)
-            username = data.get('username')
-            password = data.get('password')
-            device_info = data.get('device_info', '')
-            
-            # 验证用户
-            user = authenticate(username=username, password=password)
-            if user and user.is_active:
-                # 生成API令牌
-                token = secrets.token_urlsafe(32)
-                expires_at = timezone.now() + timedelta(days=30)  # 30天过期
-                
-                # 创建或更新令牌
-                api_token, created = MobileAPIToken.objects.get_or_create(
-                    user=user,
-                    defaults={
-                        'token': token,
-                        'expires_at': expires_at,
-                        'device_info': device_info
-                    }
-                )
-                
-                if not created:
-                    # 更新现有令牌
-                    api_token.token = token
-                    api_token.expires_at = expires_at
-                    api_token.device_info = device_info
-                    api_token.is_active = True
-                    api_token.save()
-                
+    """手机APP登录接口（兼容旧版；采集员账号走 AppCollector 认证）"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': '请求方法错误'})
+
+    try:
+        import json
+        from spiders.mobile.utils import (
+            authenticate_collector_login,
+            extract_login_password,
+            finish_collector_login,
+            get_device_id,
+        )
+
+        data = json.loads(request.body)
+        collector, err = authenticate_collector_login(data, request)
+        if collector:
+            device_id = get_device_id(request, data)
+            device_info = str(data.get('device_info', '') or '')
+            resp = finish_collector_login(request, collector, device_id, device_info)
+            body = json.loads(resp.content.decode('utf-8'))
+            if body.get('success'):
+                payload = body.get('data') or {}
+                collector_info = payload.get('collector') or {}
                 return JsonResponse({
                     'success': True,
-                    'message': '登录成功',
-                    'token': token,
+                    'message': body.get('message', '登录成功'),
+                    'token': payload.get('token', ''),
+                    'expires_at': payload.get('expires_at', ''),
                     'user': {
-                        'id': user.id,
-                        'username': user.username,
-                        'email': user.email,
-                        'first_name': user.first_name,
-                        'last_name': user.last_name
-                    }
+                        'id': collector_info.get('id'),
+                        'username': collector_info.get('username'),
+                        'display_name': collector_info.get('display_name', ''),
+                    },
+                    'collector': collector_info,
+                    'data': payload,
                 })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': '用户名或密码错误'
-                })
-                
-        except Exception as e:
             return JsonResponse({
                 'success': False,
-                'message': f'登录失败: {str(e)}'
+                'message': body.get('message', '登录失败'),
+                'error_code': (body.get('data') or {}).get('error_code', ''),
+            }, status=resp.status_code)
+
+        username = data.get('username')
+        password = extract_login_password(data) or data.get('password')
+        device_info = data.get('device_info', '')
+
+        user = authenticate(username=username, password=password)
+        if user and user.is_active:
+            token = secrets.token_urlsafe(32)
+            expires_at = timezone.now() + timedelta(days=30)
+            api_token, created = MobileAPIToken.objects.get_or_create(
+                user=user,
+                defaults={
+                    'token': token,
+                    'expires_at': expires_at,
+                    'device_info': device_info,
+                },
+            )
+            if not created:
+                api_token.token = token
+                api_token.expires_at = expires_at
+                api_token.device_info = device_info
+                api_token.is_active = True
+                api_token.save()
+            return JsonResponse({
+                'success': True,
+                'message': '登录成功',
+                'token': token,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                },
             })
-    
-    return JsonResponse({'success': False, 'message': '请求方法错误'})
+
+        if err:
+            body = json.loads(err.content.decode('utf-8'))
+            return JsonResponse({
+                'success': False,
+                'message': body.get('message', '登录失败'),
+                'error_code': (body.get('data') or {}).get('error_code', ''),
+            }, status=err.status_code)
+
+        return JsonResponse({'success': False, 'message': '用户名或密码错误'})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'登录失败: {str(e)}'})
 
 
 def verify_api_token(token):
@@ -2925,54 +2955,53 @@ def verify_api_token(token):
 
 @csrf_exempt
 def mobile_api_user_projects(request):
-    """手机APP获取用户项目接口"""
-    if request.method == 'GET':
-        try:
-            # 验证API令牌
-            token = request.headers.get('Authorization', '').replace('Bearer ', '')
-            user = verify_api_token(token)
-            
-            if not user:
-                return JsonResponse({
-                    'success': False,
-                    'message': '无效的API令牌'
+    """手机APP获取用户项目接口（兼容 App 采集员 Token 与旧版 Web 用户 Token）"""
+    if request.method != 'GET':
+        return JsonResponse({'success': False, 'message': '请求方法错误'})
+
+    try:
+        from spiders.mobile.utils import collector_projects_response, get_collector_by_app_token
+
+        auth = request.headers.get('Authorization', '')
+        token = auth[7:].strip() if auth.startswith('Bearer ') else auth.strip()
+
+        collector = get_collector_by_app_token(token)
+        if collector:
+            # 旧接口原始格式不含 data 字段，避免与 App Gson List<Project> 冲突
+            return collector_projects_response(collector, include_data_array=False)
+
+        user = verify_api_token(token)
+        if not user:
+            return JsonResponse({'success': False, 'message': '无效的API令牌'})
+
+        permissions = UserProjectPermission.objects.filter(user=user, is_active=True)
+        projects = []
+        for permission in permissions:
+            try:
+                project = PSentiment.objects.get(poiId=permission.project_poi_id)
+                comment_count = QusetAnswer.objects.filter(poiId=permission.project_poi_id).count()
+                projects.append({
+                    'poi_id': permission.project_poi_id,
+                    'poiId': str(permission.project_poi_id),
+                    'name': permission.project_name,
+                    'itemName': permission.project_name,
+                    'platform': permission.platform,
+                    'comment_count': comment_count,
+                    'granted_at': permission.granted_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'notes': permission.notes or '',
                 })
-            
-            # 获取用户的项目权限
-            permissions = UserProjectPermission.objects.filter(user=user, is_active=True)
-            
-            projects = []
-            for permission in permissions:
-                # 获取项目的最新数据统计
-                try:
-                    project = PSentiment.objects.get(poiId=permission.project_poi_id)
-                    comment_count = QusetAnswer.objects.filter(poiId=permission.project_poi_id).count()
-                    
-                    projects.append({
-                        'poi_id': permission.project_poi_id,
-                        'name': permission.project_name,
-                        'platform': permission.platform,
-                        'comment_count': comment_count,
-                        'granted_at': permission.granted_at.strftime('%Y-%m-%d %H:%M:%S'),
-                        'notes': permission.notes or ''
-                    })
-                except PSentiment.DoesNotExist:
-                    continue
-            
-            return JsonResponse({
-                'success': True,
-                'message': '获取成功',
-                'projects': projects,
-                'total_count': len(projects)
-            })
-            
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'message': f'获取失败: {str(e)}'
-            })
-    
-    return JsonResponse({'success': False, 'message': '请求方法错误'})
+            except PSentiment.DoesNotExist:
+                continue
+
+        return JsonResponse({
+            'success': True,
+            'message': '获取成功' if projects else '暂无授权项目',
+            'projects': projects,
+            'total_count': len(projects),
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'获取失败: {str(e)}'})
 
 
 @login_required

@@ -19,8 +19,14 @@ from spiders.mobile.utils import (
     active_rebind_request,
     api_response,
     authenticate_collector,
+    authenticate_collector_login,
     build_comment_payload,
+    cancel_rebind_request,
+    collector_projects_response,
+    create_device_change_request,
     expire_rebind_if_needed,
+    extract_login_password,
+    finish_collector_login,
     generate_captcha_image,
     generate_request_no,
     generate_verify_code,
@@ -30,6 +36,8 @@ from spiders.mobile.utils import (
     issue_token,
     collector_has_poi,
     parse_json,
+    parse_request_data,
+    pending_device_change_response,
     save_comment_for_collector,
     serialize_comment,
     store_captcha,
@@ -45,6 +53,97 @@ def _require_collector(request):
     if not collector.is_active:
         return None, None, api_response(False, '账号已禁用', status=403)
     return collector, api_token, None
+
+
+def _create_device_change_request(collector, device_id, device_info, request, *, is_register=False):
+    """创建设备注册/换绑申请，调试阶段可跳过旧设备验证直接进入待管理员审批。"""
+    is_first_device = not collector.bound_device_id
+    if not is_register and not is_first_device and collector.bound_device_id == device_id:
+        return None, api_response(False, '当前设备已绑定，无需换绑', status=400)
+
+    req, created = create_device_change_request(
+        collector, device_id, device_info, request, is_register=is_register,
+    )
+    if not req:
+        return None, api_response(False, '当前设备已绑定，无需换绑', status=400)
+
+    if not created:
+        message = (
+            '设备注册申请待管理员审批' if is_first_device
+            else '换绑申请已提交，请等待管理员审批'
+        )
+        return req, api_response(True, message, {
+            'request_id': req.id,
+            'request_no': req.request_no,
+            'status': req.status,
+            'new_device_id': req.new_device_id,
+            'new_device_info': req.new_device_info,
+            'is_first_device': is_first_device,
+            'verify_expires_at': timezone.localtime(req.verify_code_expires_at).strftime('%Y-%m-%d %H:%M:%S'),
+        })
+
+    if req.status == AppDeviceRebindRequest.STATUS_PENDING_OLD:
+        message = '换绑申请已创建，请在旧设备查看验证码'
+    elif is_first_device:
+        message = '设备注册申请已提交，请等待管理员审批'
+    else:
+        message = '换绑申请已提交，请等待管理员审批'
+
+    return req, api_response(True, message, {
+        'request_id': req.id,
+        'request_no': req.request_no,
+        'status': req.status,
+        'new_device_id': req.new_device_id,
+        'new_device_info': req.new_device_info,
+        'is_first_device': is_first_device,
+        'verify_expires_at': timezone.localtime(req.verify_code_expires_at).strftime('%Y-%m-%d %H:%M:%S'),
+    })
+
+
+def _parse_device_change_payload(request):
+    try:
+        data = parse_request_data(request)
+    except json.JSONDecodeError:
+        return None, api_response(False, 'JSON 格式错误', status=400)
+
+    username = str(
+        data.get('username') or data.get('user_name') or data.get('userName') or '',
+    ).strip()
+    password = extract_login_password(data)
+    device_id = get_device_id(request, data)
+    device_info = str(data.get('device_info', '') or '')
+    captcha_id = data.get('captcha_id', '')
+    captcha_code = data.get('captcha_code', '')
+    captcha_required = getattr(settings, 'MOBILE_LOGIN_CAPTCHA_REQUIRED', True)
+
+    if not username or not password or not device_id:
+        return None, api_response(
+            False,
+            'username、password、device_id 均为必填',
+            status=400,
+            data={'error_code': 'MISSING_FIELDS'},
+        )
+    if captcha_required:
+        if not captcha_id or not captcha_code:
+            return None, api_response(
+                False,
+                'captcha_id、captcha_code 为必填',
+                status=400,
+                data={'error_code': 'CAPTCHA_REQUIRED'},
+            )
+        if not verify_captcha(captcha_id, captcha_code):
+            return None, api_response(False, '验证码错误或已过期', status=400)
+
+    try:
+        collector = AppCollector.objects.get(username=username)
+    except AppCollector.DoesNotExist:
+        return None, api_response(False, '用户名或密码错误', status=401)
+    if not collector.check_password(password):
+        return None, api_response(False, '用户名或密码错误', status=401)
+    if not collector.is_active:
+        return None, api_response(False, '账号已禁用', status=403)
+
+    return (collector, device_id, device_info, data), None
 
 
 @csrf_exempt
@@ -63,85 +162,39 @@ def mobile_captcha(request):
 @require_http_methods(['POST'])
 def mobile_login(request):
     try:
-        data = parse_json(request)
+        data = parse_request_data(request)
     except json.JSONDecodeError:
         return api_response(False, 'JSON 格式错误', status=400)
 
-    username = str(data.get('username', '')).strip()
-    password = data.get('password', '')
     device_id = get_device_id(request, data)
     device_info = str(data.get('device_info', '') or '')
     captcha_id = data.get('captcha_id', '')
     captcha_code = data.get('captcha_code', '')
+    captcha_required = getattr(settings, 'MOBILE_LOGIN_CAPTCHA_REQUIRED', True)
+    password = extract_login_password(data)
+    username = str(data.get('username') or data.get('user_name') or data.get('userName') or '').strip()
 
-    if not all([username, password, device_id, captcha_id, captcha_code]):
-        return api_response(False, 'username、password、device_id、captcha_id、captcha_code 均为必填', status=400)
-    if not verify_captcha(captcha_id, captcha_code):
-        return api_response(False, '验证码错误或已过期', status=400)
+    if not username or not password or not device_id:
+        return api_response(False, 'username、password、device_id 均为必填', status=400, data={
+            'error_code': 'MISSING_FIELDS',
+            'hint': '请确认 Content-Type 为 application/json 或 form，且 password 字段名正确',
+        })
+    if captcha_required:
+        if not captcha_id or not captcha_code:
+            return api_response(False, 'captcha_id、captcha_code 为必填', status=400)
+        if not verify_captcha(captcha_id, captcha_code):
+            return api_response(False, '验证码错误或已过期', status=400)
 
-    try:
-        collector = AppCollector.objects.get(username=username)
-    except AppCollector.DoesNotExist:
-        return api_response(False, '用户名或密码错误', status=401)
-
-    if not collector.is_active:
-        return api_response(False, '账号已禁用', status=403)
-    if collector.is_locked():
-        locked_until = timezone.localtime(collector.locked_until).strftime('%Y-%m-%d %H:%M:%S')
-        return api_response(False, f'账号已锁定，请 {locked_until} 后再试', status=423)
-
-    if not collector.check_password(password):
-        collector.record_failed_login()
-        return api_response(False, '用户名或密码错误', status=401)
-
-    approved_req = AppDeviceRebindRequest.objects.filter(
-        collector=collector,
-        status=AppDeviceRebindRequest.STATUS_APPROVED,
-        new_device_id=device_id,
-    ).order_by('-reviewed_at').first()
-    if approved_req:
-        expire_rebind_if_needed(approved_req)
-        if approved_req.status == AppDeviceRebindRequest.STATUS_APPROVED:
-            collector.bind_device(device_id, device_info)
-            collector.reset_login_failures()
-            collector.last_login_at = timezone.now()
-            collector.last_login_ip = get_client_ip(request)
-            collector.save(update_fields=['last_login_at', 'last_login_ip', 'updated_at'])
-            api_token = issue_token(collector, device_id)
-            approved_req.status = AppDeviceRebindRequest.STATUS_COMPLETED
-            approved_req.completed_at = timezone.now()
-            approved_req.save(update_fields=['status', 'completed_at', 'updated_at'])
-            AppAPIToken.objects.filter(collector=collector, is_active=True).exclude(id=api_token.id).update(is_active=False)
-            return api_response(True, '登录成功（换绑完成）', {
-                'token': api_token.token,
-                'expires_at': timezone.localtime(api_token.expires_at).strftime('%Y-%m-%d %H:%M:%S'),
-                'collector': {
-                    'id': collector.id,
-                    'username': collector.username,
-                    'display_name': collector.display_name,
-                },
-            })
-
-    if collector.bound_device_id and collector.bound_device_id != device_id:
-        return api_response(False, '设备未授权，请发起设备换绑申请', status=403, data={
-            'error_code': 'DEVICE_MISMATCH',
+    collector, err = authenticate_collector_login(data, request)
+    if err:
+        return err
+    if not collector:
+        return api_response(False, '用户名或密码错误', status=401, data={
+            'error_code': 'AUTH_FAILED',
+            'hint': '请使用「采集用户管理」中创建的 App 采集员账号，不是 Web 后台登录账号',
         })
 
-    collector.bind_device(device_id, device_info)
-    collector.reset_login_failures()
-    collector.last_login_at = timezone.now()
-    collector.last_login_ip = get_client_ip(request)
-    collector.save(update_fields=['last_login_at', 'last_login_ip', 'updated_at'])
-    api_token = issue_token(collector, device_id)
-    return api_response(True, '登录成功', {
-        'token': api_token.token,
-        'expires_at': timezone.localtime(api_token.expires_at).strftime('%Y-%m-%d %H:%M:%S'),
-        'collector': {
-            'id': collector.id,
-            'username': collector.username,
-            'display_name': collector.display_name,
-        },
-    })
+    return finish_collector_login(request, collector, device_id, device_info)
 
 
 @csrf_exempt
@@ -161,17 +214,7 @@ def mobile_projects(request):
     if err:
         return err
 
-    permissions = AppProjectPermission.objects.filter(collector=collector, is_active=True).order_by('platform', 'item_name')
-    platform_map = {}
-    total = 0
-    for perm in permissions:
-        platform_map.setdefault(perm.platform or '未知', []).append({
-            'poiId': perm.poi_id,
-            'itemName': perm.item_name,
-        })
-        total += 1
-    platforms = [{'platform': name, 'items': items} for name, items in platform_map.items()]
-    return api_response(True, '获取成功', {'platforms': platforms, 'total_count': total})
+    return collector_projects_response(collector)
 
 
 @csrf_exempt
@@ -217,11 +260,11 @@ def _mobile_comments_create(request):
     if err:
         return err
     try:
-        data = parse_json(request)
+        data = parse_request_data(request)
     except json.JSONDecodeError:
         return api_response(False, 'JSON 格式错误', status=400)
 
-    poi_id = str(data.get('poiId', '')).strip()
+    poi_id = str(data.get('poiId') or data.get('poi_id') or '').strip()
     if not poi_id:
         return api_response(False, 'poiId 不能为空', status=400)
     if not collector_has_poi(collector, poi_id):
@@ -236,6 +279,13 @@ def _mobile_comments_create(request):
     if error:
         return api_response(False, error, status=403)
     return api_response(True, '保存成功', {'comment': serialize_comment(record)})
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def mobile_quset_answer_insert(request):
+    """向 quset_answer 表插入/更新评论（与 POST /comments/ 相同）。"""
+    return _mobile_comments_create(request)
 
 
 @csrf_exempt
@@ -306,68 +356,38 @@ def mobile_comment_detail(request, comment_id):
 
 @csrf_exempt
 @require_http_methods(['POST'])
-def mobile_rebind_request(request):
-    try:
-        data = parse_json(request)
-    except json.JSONDecodeError:
-        return api_response(False, 'JSON 格式错误', status=400)
-
-    username = str(data.get('username', '')).strip()
-    password = data.get('password', '')
-    device_id = get_device_id(request, data)
-    device_info = str(data.get('device_info', '') or '')
-    captcha_id = data.get('captcha_id', '')
-    captcha_code = data.get('captcha_code', '')
-
-    if not all([username, password, device_id, captcha_id, captcha_code]):
-        return api_response(False, 'username、password、device_id、captcha_id、captcha_code 均为必填', status=400)
-    if not verify_captcha(captcha_id, captcha_code):
-        return api_response(False, '验证码错误或已过期', status=400)
-
-    try:
-        collector = AppCollector.objects.get(username=username)
-    except AppCollector.DoesNotExist:
-        return api_response(False, '用户名或密码错误', status=401)
-    if not collector.check_password(password):
-        return api_response(False, '用户名或密码错误', status=401)
-    if not collector.is_active:
-        return api_response(False, '账号已禁用', status=403)
-    if not collector.bound_device_id:
-        return api_response(False, '当前账号尚未绑定设备，请直接登录完成首次绑定', status=400)
-    if collector.bound_device_id == device_id:
-        return api_response(False, '当前设备已绑定，无需换绑', status=400)
-
-    existing = active_rebind_request(collector)
-    if existing:
-        expire_rebind_if_needed(existing)
-        if existing.status not in AppDeviceRebindRequest.TERMINAL_STATUSES:
-            return api_response(False, '已有进行中的换绑申请', status=400, data={
-                'request_id': existing.id,
-                'request_no': existing.request_no,
-                'status': existing.status,
-            })
-
-    verify_code = generate_verify_code()
-    minutes = getattr(settings, 'MOBILE_REBIND_VERIFY_MINUTES', 15)
-    req = AppDeviceRebindRequest.objects.create(
-        request_no=generate_request_no(),
-        collector=collector,
-        old_device_id=collector.bound_device_id,
-        new_device_id=device_id,
-        new_device_info=device_info,
-        verify_code_hash=hash_verify_code(verify_code),
-        verify_code_expires_at=timezone.now() + timedelta(minutes=minutes),
-        request_ip=get_client_ip(request),
+def mobile_device_register_request(request):
+    """新设备注册申请（账号尚未绑定设备，或需管理员审批绑定）。"""
+    payload, err = _parse_device_change_payload(request)
+    if err:
+        return err
+    collector, device_id, device_info, _ = payload
+    if collector.bound_device_id and collector.bound_device_id != device_id:
+        return api_response(False, '账号已绑定其他设备，请使用换绑接口', status=400, data={
+            'error_code': 'DEVICE_ALREADY_BOUND',
+        })
+    _, resp = _create_device_change_request(
+        collector, device_id, device_info, request, is_register=True,
     )
-    cache_key = f'rebind_plain_code:{req.id}'
-    from django.core.cache import cache
-    cache.set(cache_key, verify_code, timeout=minutes * 60)
-    return api_response(True, '换绑申请已创建，请在旧设备查看验证码', {
-        'request_id': req.id,
-        'request_no': req.request_no,
-        'status': req.status,
-        'verify_expires_at': timezone.localtime(req.verify_code_expires_at).strftime('%Y-%m-%d %H:%M:%S'),
-    })
+    return resp
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def mobile_rebind_request(request):
+    payload, err = _parse_device_change_payload(request)
+    if err:
+        return err
+    collector, device_id, device_info, _ = payload
+    if not collector.bound_device_id:
+        _, resp = _create_device_change_request(
+            collector, device_id, device_info, request, is_register=True,
+        )
+        return resp
+    _, resp = _create_device_change_request(
+        collector, device_id, device_info, request, is_register=False,
+    )
+    return resp
 
 
 @csrf_exempt
