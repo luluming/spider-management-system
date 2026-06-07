@@ -3,14 +3,14 @@
 {% block title %}用户登录 - 数据管理系统{% endblock %}
 
 {% block auth_content %}
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-400 py-12">
-  <div class="w-full max-w-md">
-    <div class="card-soft p-6">
+<div class="min-h-screen overflow-y-auto flex items-center justify-center bg-gradient-to-r from-blue-600 to-blue-400 py-8 px-4 pb-24">
+  <div class="w-full max-w-md my-auto">
+    <div class="card-soft p-6 shadow-lg">
       <div class="text-center mb-4">
         <div class="inline-flex items-center justify-center bg-white rounded-full h-12 w-12 mb-3">
           <i class="fas fa-spider text-blue-600 text-xl"></i>
         </div>
-        <h2 class="text-2xl font-semibold">数据管理系统</h2>
+        <h2 class="text-2xl font-semibold text-gray-900">数据管理系统</h2>
         <p class="text-sm text-muted">请输入用户名和密码以登录</p>
       </div>
 
@@ -18,28 +18,30 @@
         {% csrf_token %}
         <div class="mb-4">
           <label class="block text-sm font-medium text-muted mb-1" for="username">用户名</label>
-          <input id="username" name="username" type="text" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+          <input id="username" name="username" type="text" required autocomplete="username" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div class="mb-4">
           <label class="block text-sm font-medium text-muted mb-1" for="password">密码</label>
-          <input id="password" name="password" type="password" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+          <input id="password" name="password" type="password" required autocomplete="current-password" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-muted mb-1">验证码</label>
+          <label class="block text-sm font-medium text-muted mb-1" for="captcha">验证码</label>
           <div class="flex items-center space-x-3">
-            <input id="captcha" name="captcha" type="text" required class="flex-1 px-3 py-2 border rounded-md">
-            <button type="button" id="refresh-captcha" class="px-3 py-2 border rounded-md text-muted hover:bg-gray-100">
+            <input id="captcha" name="captcha" type="text" required class="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" id="refresh-captcha" class="px-3 py-2 border rounded-md text-gray-600 bg-white hover:bg-gray-100 shrink-0" title="刷新验证码">
               <i class="fas fa-sync-alt"></i>
             </button>
           </div>
-          <div class="mt-3 text-center">
-            <img id="captcha-img" src="data:image/png;base64,{{ captcha_img }}" alt="验证码" class="inline-block border rounded" style="width: 180px; height: 60px;">
+          <div class="mt-3 flex justify-center">
+            <img id="captcha-img" src="data:image/png;base64,{{ captcha_img }}" alt="验证码" class="inline-block border rounded bg-white" width="180" height="60">
           </div>
         </div>
 
-        <div class="mt-6">
-          <button type="submit" class="w-full py-2 rounded-md bg-primary-600 text-white font-semibold hover:bg-primary-700">登录</button>
+        <div class="mt-6 pt-2">
+          <button type="submit" class="w-full py-3 rounded-md bg-blue-600 text-white text-base font-semibold shadow-md border border-blue-700 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+            登录
+          </button>
         </div>
       </form>
     </div>
